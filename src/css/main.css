@@ -1,0 +1,49 @@
+* {
+	box-sizing: border-box;
+	font-family: system-ui;
+	margin: 0;
+	padding: 0;
+}
+
+:root {
+	--red-100: #FFE7E5;
+	--red-200: #FFBDAF;
+	--red-300: #E65F5C;
+	--red-400: #761111;
+	--red-500: #282524;
+	--green-100: #E8FFEE;
+	--green-200: #36EFB1;
+	--green-300: #32D789;
+	--green-400: #03330A;
+	--green-500: #242825;
+	--blue-100: #E8F4FF;
+	--blue-200: #6EE4FF;
+	--blue-300: #41C0EC;
+	--blue-400: #031F33;
+	--blue-500: #242528;
+	--grey-100: #72FFF9;
+	--grey-200: #67E6E0;
+	--grey-300: #387D7A;
+	--grey-400: #173332;
+	--grey-500: #242424;
+	--gradient-angle: 45deg;
+	--gradient-position: 50%;
+	--gradient-scale: 1;
+	--gradient-offset: 0;
+	--gradient-intensity: 0.125;
+	--gradient-falloff: 0.03125;
+}
+
+main {
+	background-color: var(--green-100);
+	height: 100vh;
+	width: 100vw;
+}
+
+canvas#webgl {
+	height: 100vh;
+	left: 0;
+	position: fixed;
+	top: 0;
+	width: 100vw;
+}
