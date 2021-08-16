@@ -3,6 +3,9 @@ export default class Renderer {
 		this.gl = element.getContext('webgl', {
 			powerPreference: 'high-performance'
 		})
+
+		this.resize = this.resize.bind(this)
+		this.render = this.render.bind(this)
 	}
 
 	resize() {
@@ -14,6 +17,8 @@ export default class Renderer {
         if (needsResize) {
             this.gl.canvas.width = displayWidth
             this.gl.canvas.height = displayHeight
+
+            this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height)
         }
     }
 
