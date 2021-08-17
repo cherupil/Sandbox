@@ -11,7 +11,7 @@ const canvas = document.getElementById('webgl')
 const renderer = new Sandbox.Renderer(canvas)
 
 //Triangle
-const length = 1
+let length = 1
 const height = length * Math.sqrt(3) / 2
 const geometry = new Sandbox.Geometry([
 	-(length / 2) / aspectRatio, - height / 2, 0,
@@ -19,17 +19,39 @@ const geometry = new Sandbox.Geometry([
 	0, height / 2, 0
 ])
 geometry.setAttribute('aColor', new Float32Array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), 3)
-const triangleShader = Sandbox.Shader.create(renderer.gl, triangleShaderVertex, triangleShaderFragment)
+const triangleShader = new Sandbox.Program(renderer.gl, triangleShaderVertex, triangleShaderFragment)
 const triangleMesh = new Sandbox.Mesh(renderer.gl, geometry, triangleShader)
 const volume = new Sandbox.Volume()
 volume.add(triangleMesh)
 
+length = 0.5
+const geometry2 = new Sandbox.Geometry([
+	-(length / 2) / aspectRatio, - height / 2, 0,
+	(length / 2) / aspectRatio, - height / 2, 0,
+	0, height / 2, 0
+])
+geometry2.setAttribute('aColor', new Float32Array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]), 3)
+const triangleMesh2 = new Sandbox.Mesh(renderer.gl, geometry2, triangleShader)
+
 //Plane
 const plane = new Sandbox.Plane(0.5, 0.5, 1, 1)
-plane.setAttribute('aColor', new Float32Array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0]), 3)
-const planeShader = Sandbox.Shader.create(renderer.gl, planeShaderVertex, planeShaderFragment)
-const planeMesh = new Sandbox.Mesh(renderer.gl, plane, triangleShader)
+const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
+const planeMesh = new Sandbox.Mesh(renderer.gl, plane, planeShader)
 volume.add(planeMesh)
+
+volume.add(triangleMesh)
+
+volume.add(planeMesh)
+
+volume.add(triangleMesh)
+
+volume.add(triangleMesh2)
+
+volume.add(planeMesh)
+
+volume.add(triangleMesh)
+
+volume.add(triangleMesh2)
 
 //Set Viewport
 renderer.resize()

@@ -23,18 +23,30 @@ export default class Renderer {
     }
 
     render(volume) {
-    	for (const object of volume.objects) {
-			this.gl.useProgram(object.shader)
+    	let lastShader = null
+    	let lastBuffer = null
 
-			for (const attribute in object.geometry.attributes) {
-				this.gl.enableVertexAttribArray(object.geometry.attributes[attribute].location)
-				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, object.geometry.attributes[attribute].buffer)
-				const size = object.geometry.attributes[attribute].size
-				const type = this.gl.FLOAT
-				const normalize = false
-				const stride = 0
-				const offset = 0
-				this.gl.vertexAttribPointer(object.geometry.attributes[attribute].location, size, type, normalize, stride, offset)
+    	for (const object of volume.objects) {
+    		let bindBuffers = false
+
+    		if (object.shader.program !== lastShader) {
+    			this.gl.useProgram(object.shader.program)
+    			lastShader = object.shader.program
+    			bindBuffers = true
+    		}
+
+    		if (bindBuffers || object.geometry.attributes != lastBuffer) {
+				for (const attribute in object.geometry.attributes) {
+					this.gl.enableVertexAttribArray(object.geometry.attributes[attribute].location)
+					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, object.geometry.attributes[attribute].buffer)
+					const size = object.geometry.attributes[attribute].size
+					const type = this.gl.FLOAT
+					const normalize = false
+					const stride = 0
+					const offset = 0
+					this.gl.vertexAttribPointer(object.geometry.attributes[attribute].location, size, type, normalize, stride, offset)
+				}
+				lastBuffer = object.geometry.attributes
 			}
 
 			const primitiveType = this.gl.TRIANGLES

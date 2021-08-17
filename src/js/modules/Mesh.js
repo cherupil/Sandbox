@@ -8,7 +8,7 @@ export default class Mesh {
 
 	_setAttributeData() {
 		for (const attribute in this.geometry.attributes) {
-			this.geometry.attributes[attribute].location = this.gl.getAttribLocation(this.shader, this.geometry.attributes[attribute].name)
+			this.geometry.attributes[attribute].location = this.gl.getAttribLocation(this.shader.program, this.geometry.attributes[attribute].name)
 			this.geometry.attributes[attribute].buffer = this.gl.createBuffer()
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].buffer)
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].data, this.gl.STATIC_DRAW)

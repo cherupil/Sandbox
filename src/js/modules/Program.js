@@ -1,11 +1,14 @@
-export default class Shader {
-	static create(gl, vertex, fragment) {
+let programId = 0
+
+export default class Program {
+	constructor(gl, vertex, fragment) {
 		const vertexShader = this._createShader(gl, gl.VERTEX_SHADER, vertex)
 		const fragmentShader = this._createShader(gl, gl.FRAGMENT_SHADER, fragment)
-		return this._createProgram(gl, vertexShader, fragmentShader)
+		this.id = programId++
+		this.program = this._createProgram(gl, vertexShader, fragmentShader)
 	}
 
-	static _createShader(gl, type, source) {
+	_createShader(gl, type, source) {
 		const shader = gl.createShader(type)
 		gl.shaderSource(shader, source)
 		gl.compileShader(shader)
@@ -18,7 +21,7 @@ export default class Shader {
 		gl.deleteShader(shader)
 	}
 
-	static _createProgram(gl, vertexShader, fragmentShader) {
+	_createProgram(gl, vertexShader, fragmentShader) {
 		const program = gl.createProgram()
 		gl.attachShader(program, vertexShader)
 		gl.attachShader(program, fragmentShader)

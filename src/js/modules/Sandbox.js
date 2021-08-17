@@ -3,7 +3,7 @@ import Volume from './Volume.js'
 import Mesh from './Mesh.js'
 import Geometry from './Geometry.js'
 import Plane from './Plane.js'
-import Shader from './Shader.js'
+import Program from './Program.js'
 
 export default class Sandbox {
 	static createColor(r, g, b) {
@@ -20,5 +20,5 @@ Sandbox.Volume = Volume
 Sandbox.Mesh = Mesh
 Sandbox.Geometry = Geometry
 Sandbox.Plane = Plane
-Sandbox.Shader = Shader
+Sandbox.Program = Program
 
