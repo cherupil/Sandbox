@@ -1,10 +1,11 @@
-// an attribute will receive data from a buffer
 attribute vec4 aPosition;
 
-// all shaders have a main function
-void main() {
+uniform mat3 uMatrix;
 
-	// gl_Position is a special variable a vertex shader
-	// is responsible for setting
-	gl_Position = aPosition;
+varying vec4 vPos;
+
+void main() {
+	vec2 position = (uMatrix * vec3(aPosition.xy, 1.0)).xy;
+	gl_Position = vec4(position, 0.0, 1.0);
+	vPos = aPosition;
 }

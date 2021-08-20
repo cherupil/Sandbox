@@ -49,7 +49,30 @@ export default class Renderer {
 				lastBuffer = object.geometry.attributes
 			}
 
-			const primitiveType = this.gl.TRIANGLES
+			for (const uniform in object.shader.uniforms) {
+				if (uniform === 'uMatrix') {
+					this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.matrix)
+				} else {
+					switch (object.shader.uniforms[uniform].type) {
+						case '1f':
+							this.gl.uniform1f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value)
+							break
+						case '2f':
+							this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1])
+							break
+						case '3f':
+							this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1], object.shader.uniforms[uniform].value[2])
+							break
+						case 'mat3':
+							this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value)
+							break
+						default:
+							break
+					}
+				}
+			}
+
+			const primitiveType = this.gl[object.drawMode]
 			const vertexOffset = 0
 			const count = object.geometry.attributes.aPosition.count
 			this.gl.drawArrays(primitiveType, vertexOffset, count)

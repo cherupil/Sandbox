@@ -1,11 +1,20 @@
+
 let programId = 0
 
 export default class Program {
 	constructor(gl, vertex, fragment) {
 		const vertexShader = this._createShader(gl, gl.VERTEX_SHADER, vertex)
 		const fragmentShader = this._createShader(gl, gl.FRAGMENT_SHADER, fragment)
+		this.gl = gl
 		this.id = programId++
 		this.program = this._createProgram(gl, vertexShader, fragmentShader)
+		this.uniforms = {
+			uMatrix: {
+				name: 'uMatrix',
+				value: null,
+				type: 'mat3'
+			}
+		}
 	}
 
 	_createShader(gl, type, source) {
@@ -34,4 +43,12 @@ export default class Program {
 		console.log(gl.getProgramInfoLog(program))
 		gl.deleteProgram(program)
 	}
+
+	setUniform(name, value, type) {
+        this.uniforms[name] = {
+            name,
+            value,
+            type
+        }
+    }
 }
