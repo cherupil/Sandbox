@@ -6,14 +6,20 @@ export default class Mesh {
 		this.shader = shader
 		this.position = {
 			x: 0,
-			y: 0
+			y: 0,
+			z: 0
 		}
-		this.rotation = 0
+		this.rotation = {
+			x: 0,
+			y: 0,
+			z: 0
+		}
 		this.scale = {
 			x: 1,
-			y: 1
+			y: 1,
+			z: 1
 		}
-		this.matrix = Matrix.identity2D()
+		this.matrix = Matrix.identity()
 		this._setAttributeData()
 		this._setUniformData()
 		this._setDrawMode()
@@ -41,28 +47,42 @@ export default class Mesh {
     }
 
 	_recalculateModelMatrix() {
-		const identity = Matrix.identity2D()
-		const translation = Matrix.translate2D(this.position.x, this.position.y)
-		const rotation = Matrix.rotate2D(this.rotation)
-		const scale = Matrix.scale2D(this.scale.x, this.scale.y)
-		let matrix = Matrix.multiply3x3(identity, translation)
-		matrix = Matrix.multiply3x3(matrix, rotation)
-		matrix = Matrix.multiply3x3(matrix, scale)
+		const identity = Matrix.identity()
+		const translation = Matrix.translate(this.position.x, this.position.y, this.position.z)
+		const rotationX = Matrix.rotateX(this.rotation.x)
+		const rotationY = Matrix.rotateY(this.rotation.y)
+		const rotationZ = Matrix.rotateZ(this.rotation.z)
+		const scale = Matrix.scale(this.scale.x, this.scale.y, this.scale.z)
+		let matrix = Matrix.multiply(identity, translation)
+		matrix = Matrix.multiply(matrix, rotationX)
+		matrix = Matrix.multiply(matrix, rotationY)
+		matrix = Matrix.multiply(matrix, rotationZ)
+		matrix = Matrix.multiply(matrix, scale)
 		this.matrix = matrix
 	}
 
-	setPosition2D(x, y) {
-		this.position = { x, y }
+	setPosition(x, y, z) {
+		this.position = { x, y, z }
 		this._recalculateModelMatrix()
 	}
 
-	setRotation2D(angle) {
-		this.rotation = angle
+	setRotationX(angle) {
+		this.rotation.x = angle
 		this._recalculateModelMatrix()
 	}
 
-	setScale2D(x, y) {
-		this.scale = { x, y }
+	setRotationY(angle) {
+		this.rotation.y = angle
+		this._recalculateModelMatrix()
+	}
+
+	setRotationZ(angle) {
+		this.rotation.z = angle
+		this._recalculateModelMatrix()
+	}
+
+	setScale(x, y, z) {
+		this.scale = { x, y, z }
 		this._recalculateModelMatrix()
 	}
 }

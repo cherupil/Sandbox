@@ -12,7 +12,7 @@ export default class Program {
 			uMatrix: {
 				name: 'uMatrix',
 				value: null,
-				type: 'mat3'
+				type: 'mat4'
 			}
 		}
 	}

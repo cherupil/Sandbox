@@ -19,7 +19,11 @@ export default class Renderer {
             this.gl.canvas.height = displayHeight
 
             this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height)
+
+            return true
         }
+
+        return false
     }
 
     render(volume) {
@@ -51,7 +55,7 @@ export default class Renderer {
 
 			for (const uniform in object.shader.uniforms) {
 				if (uniform === 'uMatrix') {
-					this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.matrix)
+					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.matrix)
 				} else {
 					switch (object.shader.uniforms[uniform].type) {
 						case '1f':
@@ -65,6 +69,9 @@ export default class Renderer {
 							break
 						case 'mat3':
 							this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value)
+							break
+						case 'mat4':
+							this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value)
 							break
 						default:
 							break
