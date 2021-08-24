@@ -47,3 +47,43 @@ canvas#webgl {
 	top: 0;
 	width: 100vw;
 }
+
+input[type="range"] {
+	background-color: transparent;
+	left: 32px;
+	padding-bottom: 16px;
+	padding-right: 16px;
+	position: fixed;
+	-webkit-appearance: none;
+	width: calc(25vw - 64px);
+	z-index: 3;
+}
+
+#rotateX {
+	bottom: 192px;
+}
+
+#rotateY {
+	bottom: 128px;
+}
+
+#rotateZ {
+	bottom: 64px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+	background-color: rgba(0, 0, 0, 0.5);
+	border-radius: 2px;
+	height: 4px;
+	width: 100%;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+	background-color: white;
+	border-radius: 50%;
+	box-shadow: 0 0 4px 0 rgba(0,0,0,0.24), 0 0 8px 0 rgba(0,0,0,0.12);
+	height: 32px;
+	margin-top: -14px;
+	-webkit-appearance: none;
+	width: 32px;
+}

@@ -33,6 +33,9 @@
       return false;
     }
     render(volume2) {
+      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+      this.gl.enable(this.gl.CULL_FACE);
+      this.gl.enable(this.gl.DEPTH_TEST);
       let lastShader = null;
       let lastBuffer = null;
       for (const object of volume2.objects) {
@@ -85,6 +88,39 @@
         const count = object.geometry.attributes.aPosition.count;
         this.gl.drawArrays(primitiveType, vertexOffset, count);
       }
+    }
+  };
+
+  // src/js/modules/Orthographic.js
+  var Orthographic = class {
+    constructor(left, right, bottom, top, near, far) {
+      this.left = left;
+      this.right = right;
+      this.bottom = bottom;
+      this.top = top;
+      this.near = near;
+      this.far = far;
+      this.createMatrix();
+    }
+    createMatrix() {
+      this.matrix = [
+        2 / (this.right - this.left),
+        0,
+        0,
+        0,
+        0,
+        2 / (this.top - this.bottom),
+        0,
+        0,
+        0,
+        0,
+        2 / (this.near - this.far),
+        0,
+        (this.left + this.right) / (this.left - this.right),
+        (this.bottom + this.top) / (this.bottom - this.top),
+        (this.near + this.far) / (this.near - this.far),
+        1
+      ];
     }
   };
 
@@ -347,6 +383,10 @@
       matrix = Matrix.multiply(matrix, scale);
       this.matrix = matrix;
     }
+    setProjectionMatrix(matrix) {
+      this.projectionMatrix = matrix;
+      this._recalculateModelMatrix();
+    }
     setPosition(x, y, z) {
       this.position = { x, y, z };
       this._recalculateModelMatrix();
@@ -432,6 +472,89 @@
     }
   };
 
+  // src/js/modules/Cube.js
+  var Cube = class extends Geometry {
+    constructor(width, height2, depth, widthSegments, heightSegments, depthSegments) {
+      const positions = [];
+      const segmentWidth = width / widthSegments;
+      const segmentHeight = height2 / heightSegments;
+      const segmentDepth = depth / depthSegments;
+      for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < heightSegments; j++) {
+          for (let k = 0; k < widthSegments; k++) {
+            const x1 = k * segmentWidth - width / 2;
+            const y1 = j * segmentHeight - height2 / 2;
+            const z = i * depth - depth / 2;
+            const x2 = (k + 1) * segmentWidth - width / 2;
+            const y2 = y1;
+            const x3 = x1;
+            const y3 = (j + 1) * segmentHeight - height2 / 2;
+            const x4 = x1;
+            const y4 = y3;
+            const x5 = x2;
+            const y5 = y2;
+            const x6 = x2;
+            const y6 = y3;
+            if (i === 0) {
+              positions.push(x1, y1, z, x2, y2, z, x3, y3, z, x4, y4, z, x5, y5, z, x6, y6, z);
+            } else {
+              positions.push(x1, y1, z, x3, y3, z, x2, y2, z, x4, y4, z, x6, y6, z, x5, y5, z);
+            }
+          }
+        }
+      }
+      for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < depthSegments; j++) {
+          for (let k = 0; k < widthSegments; k++) {
+            const x1 = k * segmentWidth - width / 2;
+            const y = i * height2 - height2 / 2;
+            const z1 = j * segmentDepth - depth / 2;
+            const x2 = (k + 1) * segmentWidth - width / 2;
+            const z2 = z1;
+            const x3 = x1;
+            const z3 = (j + 1) * segmentDepth - depth / 2;
+            const x4 = x1;
+            const z4 = z3;
+            const x5 = x2;
+            const z5 = z2;
+            const x6 = x2;
+            const z6 = z3;
+            if (i === 0) {
+              positions.push(x1, y, z1, x3, y, z3, x2, y, z2, x4, y, z4, x6, y, z6, x5, y, z5);
+            } else {
+              positions.push(x1, y, z1, x2, y, z2, x3, y, z3, x4, y, z4, x5, y, z5, x6, y, z6);
+            }
+          }
+        }
+      }
+      for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < depthSegments; j++) {
+          for (let k = 0; k < widthSegments; k++) {
+            const x = i * width - width / 2;
+            const y1 = j * segmentHeight - height2 / 2;
+            const z1 = k * segmentDepth - depth / 2;
+            const y2 = (j + 1) * segmentHeight - height2 / 2;
+            const z2 = z1;
+            const y3 = y1;
+            const z3 = (k + 1) * segmentDepth - depth / 2;
+            const y4 = y1;
+            const z4 = z3;
+            const y5 = y2;
+            const z5 = z2;
+            const y6 = y2;
+            const z6 = z3;
+            if (i === 0) {
+              positions.push(x, y1, z1, x, y2, z2, x, y3, z3, x, y4, z4, x, y5, z5, x, y6, z6);
+            } else {
+              positions.push(x, y1, z1, x, y3, z3, x, y2, z2, x, y4, z4, x, y6, z6, x, y5, z5);
+            }
+          }
+        }
+      }
+      super(positions);
+    }
+  };
+
   // src/js/modules/Program.js
   var programId = 0;
   var Program = class {
@@ -492,11 +615,13 @@
     }
   };
   Sandbox.Renderer = Renderer;
+  Sandbox.Orthographic = Orthographic;
   Sandbox.Volume = Volume;
   Sandbox.Mesh = Mesh;
   Sandbox.Geometry = Geometry;
   Sandbox.Plane = Plane;
   Sandbox.Circle = Circle;
+  Sandbox.Cube = Cube;
   Sandbox.Program = Program;
 
   // src/js/main.js
@@ -520,20 +645,35 @@
   var triangleShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   var triangleMesh = new Sandbox.Mesh(geometry, triangleShader);
   var volume = new Sandbox.Volume();
-  volume.add(triangleMesh);
   var plane = new Sandbox.Plane(0.625, 0.625, 1, 1);
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
   planeShader.setUniform("uResolution", [canvas.clientWidth, canvas.clientHeight], "2f");
   var planeMesh = new Sandbox.Mesh(plane, planeShader);
   planeMesh.setPosition(-0.5, 0.5, 0);
-  volume.add(planeMesh);
   var circle = new Sandbox.Circle(0.375, 64);
   var circleMesh = new Sandbox.Mesh(circle, planeShader);
   circleMesh.setPosition(0.5, 0, 0);
-  volume.add(circleMesh);
+  var cube = new Sandbox.Cube(0.25, 0.25, 0.25, 1, 1, 1);
+  var cubeColors = [];
+  cubeColors.push(1, 0, 0, 1, 0, 0, 1, 0, 0);
+  cubeColors.push(1, 0, 0, 1, 0, 0, 1, 0, 0);
+  cubeColors.push(1, 0, 0.5, 1, 0, 0.5, 1, 0, 0.5);
+  cubeColors.push(1, 0, 0.5, 1, 0, 0.5, 1, 0, 0.5);
+  cubeColors.push(0, 1, 0, 0, 1, 0, 0, 1, 0);
+  cubeColors.push(0, 1, 0, 0, 1, 0, 0, 1, 0);
+  cubeColors.push(0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, 0.5, 0);
+  cubeColors.push(0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, 0.5, 0);
+  cubeColors.push(0, 0, 1, 0, 0, 1, 0, 0, 1);
+  cubeColors.push(0, 0, 1, 0, 0, 1, 0, 0, 1);
+  cubeColors.push(0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1);
+  cubeColors.push(0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1);
+  cube.setAttribute("aColor", new Float32Array(cubeColors), 3);
+  var cubeMesh = new Sandbox.Mesh(cube, triangleShader);
+  console.log(cubeMesh);
+  volume.add(cubeMesh);
+  var camera = new Sandbox.Orthographic(0, canvas.clientWidth, canvas.clientHeight, 0, -4e3, 4e3);
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
-  renderer.gl.clear(renderer.gl.COLOR_BUFFER_BIT);
   var time = 0;
   var draw = () => {
     renderer.render(volume);
@@ -541,6 +681,8 @@
     triangleMesh.setScale((Math.sin(time) + 1) / 2, (Math.sin(time) + 1) / 2, 1);
     planeMesh.setRotationZ(time * 100);
     circleMesh.setPosition(0.5, Math.cos(time) * 0.5, 0);
+    cubeMesh.setRotationX(30 * time);
+    cubeMesh.setRotationY(45 * time);
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
@@ -549,4 +691,16 @@
     }
   });
   window.requestAnimationFrame(draw);
+  var rotateXInput = document.getElementById("rotateX");
+  var rotateYInput = document.getElementById("rotateY");
+  var rotateZInput = document.getElementById("rotateZ");
+  rotateXInput.addEventListener("input", (event) => {
+    cubeMesh.setRotationX(event.target.value);
+  });
+  rotateYInput.addEventListener("input", (event) => {
+    cubeMesh.setRotationY(event.target.value);
+  });
+  rotateZInput.addEventListener("input", (event) => {
+    cubeMesh.setRotationZ(event.target.value);
+  });
 })();

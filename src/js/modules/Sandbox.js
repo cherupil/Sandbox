@@ -1,9 +1,11 @@
 import Renderer from './Renderer.js'
+import Orthographic from './Orthographic.js'
 import Volume from './Volume.js'
 import Mesh from './Mesh.js'
 import Geometry from './Geometry.js'
 import Plane from './Plane.js'
 import Circle from './Circle.js'
+import Cube from './Cube.js'
 import Program from './Program.js'
 
 export default class Sandbox {
@@ -17,10 +19,12 @@ export default class Sandbox {
 }
 
 Sandbox.Renderer = Renderer
+Sandbox.Orthographic = Orthographic
 Sandbox.Volume = Volume
 Sandbox.Mesh = Mesh
 Sandbox.Geometry = Geometry
 Sandbox.Plane = Plane
 Sandbox.Circle = Circle
+Sandbox.Cube = Cube
 Sandbox.Program = Program
 

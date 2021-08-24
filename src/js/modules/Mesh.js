@@ -1,4 +1,5 @@
 import Matrix from './Matrix.js'
+import Orthographic from './Orthographic.js'
 
 export default class Mesh {
 	constructor(geometry, shader) {
@@ -59,6 +60,11 @@ export default class Mesh {
 		matrix = Matrix.multiply(matrix, rotationZ)
 		matrix = Matrix.multiply(matrix, scale)
 		this.matrix = matrix
+	}
+
+	setProjectionMatrix(matrix) {
+		this.projectionMatrix = matrix
+		this._recalculateModelMatrix()
 	}
 
 	setPosition(x, y, z) {

@@ -27,10 +27,15 @@ export default class Renderer {
     }
 
     render(volume) {
+    	this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
+
+    	this.gl.enable(this.gl.CULL_FACE)
+    	this.gl.enable(this.gl.DEPTH_TEST)
+
     	let lastShader = null
     	let lastBuffer = null
 
-    	for (const object of volume.objects) {
+    	for (const object of volume.objects) {    		
     		let bindBuffers = false
 
     		if (object.shader.program !== lastShader) {
