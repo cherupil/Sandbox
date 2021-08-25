@@ -32,13 +32,14 @@
       }
       return false;
     }
-    render(volume2) {
+    render(volume2, camera2) {
       this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
       this.gl.enable(this.gl.CULL_FACE);
       this.gl.enable(this.gl.DEPTH_TEST);
       let lastShader = null;
       let lastBuffer = null;
       for (const object of volume2.objects) {
+        object.setProjectionMatrix(camera2.matrix);
         let bindBuffers = false;
         if (object.shader.program !== lastShader) {
           this.gl.useProgram(object.shader.program);
@@ -60,7 +61,7 @@
         }
         for (const uniform in object.shader.uniforms) {
           if (uniform === "uMatrix") {
-            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.matrix);
+            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix);
           } else {
             switch (object.shader.uniforms[uniform].type) {
               case "1f":
@@ -100,9 +101,9 @@
       this.top = top;
       this.near = near;
       this.far = far;
-      this.createMatrix();
+      this._createMatrix();
     }
-    createMatrix() {
+    _createMatrix() {
       this.matrix = [
         2 / (this.right - this.left),
         0,
@@ -114,13 +115,37 @@
         0,
         0,
         0,
-        2 / (this.near - this.far),
+        2 / (this.far - this.near),
         0,
-        (this.left + this.right) / (this.left - this.right),
-        (this.bottom + this.top) / (this.bottom - this.top),
-        (this.near + this.far) / (this.near - this.far),
+        -(this.right + this.left) / (this.right - this.left),
+        -(this.top + this.bottom) / (this.top - this.bottom),
+        (this.far + this.near) / (this.far - this.near),
         1
       ];
+    }
+    setLeft(left) {
+      this.left = left;
+      this._createMatrix();
+    }
+    setRight(right) {
+      this.right = right;
+      this._createMatrix();
+    }
+    setBottom(bottom) {
+      this.bottom = bottom;
+      this._createMatrix();
+    }
+    setTop(top) {
+      this.top = top;
+      this._createMatrix();
+    }
+    setNear(near) {
+      this.near = near;
+      this._createMatrix();
+    }
+    setFar(far) {
+      this.far = far;
+      this._createMatrix();
     }
   };
 
@@ -346,7 +371,7 @@
         y: 1,
         z: 1
       };
-      this.matrix = Matrix.identity();
+      this.localMatrix = Matrix.identity();
       this._setAttributeData();
       this._setUniformData();
       this._setDrawMode();
@@ -381,11 +406,10 @@
       matrix = Matrix.multiply(matrix, rotationY);
       matrix = Matrix.multiply(matrix, rotationZ);
       matrix = Matrix.multiply(matrix, scale);
-      this.matrix = matrix;
+      this.localMatrix = matrix;
     }
     setProjectionMatrix(matrix) {
-      this.projectionMatrix = matrix;
-      this._recalculateModelMatrix();
+      this.projectionMatrix = Matrix.multiply(matrix, this.localMatrix);
     }
     setPosition(x, y, z) {
       this.position = { x, y, z };
@@ -649,11 +673,12 @@
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
   planeShader.setUniform("uResolution", [canvas.clientWidth, canvas.clientHeight], "2f");
   var planeMesh = new Sandbox.Mesh(plane, planeShader);
-  planeMesh.setPosition(-0.5, 0.5, 0);
+  planeMesh.setPosition(0, 0, 0);
   var circle = new Sandbox.Circle(0.375, 64);
   var circleMesh = new Sandbox.Mesh(circle, planeShader);
-  circleMesh.setPosition(0.5, 0, 0);
-  var cube = new Sandbox.Cube(0.25, 0.25, 0.25, 1, 1, 1);
+  circleMesh.setPosition(1, 0, 0);
+  volume.add(circleMesh);
+  var cube = new Sandbox.Cube(1, 1, 1, 1, 1, 1);
   var cubeColors = [];
   cubeColors.push(1, 0, 0, 1, 0, 0, 1, 0, 0);
   cubeColors.push(1, 0, 0, 1, 0, 0, 1, 0, 0);
@@ -669,24 +694,23 @@
   cubeColors.push(0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1);
   cube.setAttribute("aColor", new Float32Array(cubeColors), 3);
   var cubeMesh = new Sandbox.Mesh(cube, triangleShader);
-  console.log(cubeMesh);
+  console.log(cubeMesh, triangleMesh);
   volume.add(cubeMesh);
-  var camera = new Sandbox.Orthographic(0, canvas.clientWidth, canvas.clientHeight, 0, -4e3, 4e3);
+  volume.add(planeMesh);
+  var camera = new Sandbox.Orthographic(-1 * aspectRatio, 1 * aspectRatio, -1, 1, -1, 1);
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
   var time = 0;
   var draw = () => {
-    renderer.render(volume);
+    renderer.render(volume, camera);
     time += 0.01;
-    triangleMesh.setScale((Math.sin(time) + 1) / 2, (Math.sin(time) + 1) / 2, 1);
-    planeMesh.setRotationZ(time * 100);
-    circleMesh.setPosition(0.5, Math.cos(time) * 0.5, 0);
-    cubeMesh.setRotationX(30 * time);
-    cubeMesh.setRotationY(45 * time);
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
     if (renderer.resize()) {
+      aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height;
+      camera.setLeft(-1 * aspectRatio);
+      camera.setRight(1 * aspectRatio);
       planeShader.uniforms.uResolution.value = [canvas.clientWidth, canvas.clientHeight];
     }
   });
@@ -695,12 +719,15 @@
   var rotateYInput = document.getElementById("rotateY");
   var rotateZInput = document.getElementById("rotateZ");
   rotateXInput.addEventListener("input", (event) => {
-    cubeMesh.setRotationX(event.target.value);
+    console.log("cube Z: ", event.target.value);
+    cubeMesh.setPosition(0, 0, event.target.value);
   });
   rotateYInput.addEventListener("input", (event) => {
+    console.log("rotate Y: ", event.target.value);
     cubeMesh.setRotationY(event.target.value);
   });
   rotateZInput.addEventListener("input", (event) => {
-    cubeMesh.setRotationZ(event.target.value);
+    console.log("triangle Z: ", event.target.value);
+    planeMesh.setPosition(0, 0, event.target.value);
   });
 })();

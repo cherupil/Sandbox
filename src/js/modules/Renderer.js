@@ -26,7 +26,7 @@ export default class Renderer {
         return false
     }
 
-    render(volume) {
+    render(volume, camera) {
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
 
     	this.gl.enable(this.gl.CULL_FACE)
@@ -35,7 +35,8 @@ export default class Renderer {
     	let lastShader = null
     	let lastBuffer = null
 
-    	for (const object of volume.objects) {    		
+    	for (const object of volume.objects) {    
+    		object.setProjectionMatrix(camera.matrix)
     		let bindBuffers = false
 
     		if (object.shader.program !== lastShader) {
@@ -60,7 +61,7 @@ export default class Renderer {
 
 			for (const uniform in object.shader.uniforms) {
 				if (uniform === 'uMatrix') {
-					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.matrix)
+					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix)
 				} else {
 					switch (object.shader.uniforms[uniform].type) {
 						case '1f':
