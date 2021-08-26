@@ -23,14 +23,15 @@ geometry.setAttribute('aColor', new Float32Array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 
 const triangleShader = new Sandbox.Program(renderer.gl, triangleShaderVertex, triangleShaderFragment)
 const triangleMesh = new Sandbox.Mesh(geometry, triangleShader)
 const volume = new Sandbox.Volume()
-//volume.add(triangleMesh)
+volume.add(triangleMesh)
 
 //Plane
 const plane = new Sandbox.Plane(0.625, 0.625, 1, 1)
 const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
 planeShader.setUniform('uResolution', [canvas.clientWidth, canvas.clientHeight], '2f')
 const planeMesh = new Sandbox.Mesh(plane, planeShader)
-planeMesh.setPosition(0, 0, 0)
+planeMesh.setPosition(-1, 0.5, 0)
+volume.add(planeMesh)
 
 //Circle
 const circle = new Sandbox.Circle(0.375, 64)
@@ -55,10 +56,7 @@ cubeColors.push(0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0)
 cubeColors.push(0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0)
 cube.setAttribute('aColor', new Float32Array(cubeColors), 3)
 const cubeMesh = new Sandbox.Mesh(cube, triangleShader)
-console.log(cubeMesh, triangleMesh)
 volume.add(cubeMesh)
-
-volume.add(planeMesh)
 
 //Set Viewport
 const camera = new Sandbox.Orthographic(-1 * aspectRatio, 1 * aspectRatio, -1, 1, -1, 1)
@@ -72,9 +70,9 @@ let time = 0
 const draw = () => {
 	renderer.render(volume, camera)
 	time += 0.01
-	//triangleMesh.setScale((Math.sin(time) + 1) / 2, (Math.sin(time) + 1) / 2, 1)
-	//planeMesh.setRotationZ(time * 100)
-	//circleMesh.setPosition(1, Math.cos(time) * 0.5, 0)
+	triangleMesh.setScale((Math.sin(time) + 1) / 2, (Math.sin(time) + 1) / 2, 1)
+	planeMesh.setRotationZ(time * 100)
+	circleMesh.setPosition(1, 0.5, 0)
 	//cubeMesh.setRotationX(30 * time)
 	//cubeMesh.setRotationY(45 * time)
 	//planeMesh.shader.uniforms.uScale.value = [time, time]
@@ -109,5 +107,5 @@ rotateYInput.addEventListener('input', event => {
 
 rotateZInput.addEventListener('input', event => {
 	console.log('triangle Z: ', event.target.value)
-	planeMesh.setPosition(0, 0, event.target.value)
+	triangleMesh.setPosition(0, 0, event.target.value)
 })

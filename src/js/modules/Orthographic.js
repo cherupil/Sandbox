@@ -13,8 +13,8 @@ export default class Orthographic {
 		this.matrix = [
 			2 / (this.right - this.left), 0, 0, 0,
 			0, 2 / (this.top - this.bottom), 0, 0,
-			0, 0, 2 / (this.far - this.near), 0,
-			-(this.right + this.left) / (this.right - this.left), -(this.top + this.bottom) / (this.top - this.bottom), (this.far + this.near) / (this.far - this.near), 1
+			0, 0, -2 / (this.far - this.near), 0,
+			-(this.right + this.left) / (this.right - this.left), -(this.top + this.bottom) / (this.top - this.bottom), -(this.far + this.near) / (this.far - this.near), 1
 		]
 	}
 

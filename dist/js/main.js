@@ -115,11 +115,11 @@
         0,
         0,
         0,
-        2 / (this.far - this.near),
+        -2 / (this.far - this.near),
         0,
         -(this.right + this.left) / (this.right - this.left),
         -(this.top + this.bottom) / (this.top - this.bottom),
-        (this.far + this.near) / (this.far - this.near),
+        -(this.far + this.near) / (this.far - this.near),
         1
       ];
     }
@@ -500,77 +500,48 @@
   var Cube = class extends Geometry {
     constructor(width, height2, depth, widthSegments, heightSegments, depthSegments) {
       const positions = [];
-      const segmentWidth = width / widthSegments;
-      const segmentHeight = height2 / heightSegments;
-      const segmentDepth = depth / depthSegments;
-      for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < heightSegments; j++) {
-          for (let k = 0; k < widthSegments; k++) {
-            const x1 = k * segmentWidth - width / 2;
-            const y1 = j * segmentHeight - height2 / 2;
-            const z = i * depth - depth / 2;
-            const x2 = (k + 1) * segmentWidth - width / 2;
-            const y2 = y1;
-            const x3 = x1;
-            const y3 = (j + 1) * segmentHeight - height2 / 2;
-            const x4 = x1;
-            const y4 = y3;
-            const x5 = x2;
-            const y5 = y2;
-            const x6 = x2;
-            const y6 = y3;
-            if (i === 0) {
-              positions.push(x1, y1, z, x2, y2, z, x3, y3, z, x4, y4, z, x5, y5, z, x6, y6, z);
-            } else {
-              positions.push(x1, y1, z, x3, y3, z, x2, y2, z, x4, y4, z, x6, y6, z, x5, y5, z);
-            }
-          }
-        }
-      }
-      for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < depthSegments; j++) {
-          for (let k = 0; k < widthSegments; k++) {
-            const x1 = k * segmentWidth - width / 2;
-            const y = i * height2 - height2 / 2;
-            const z1 = j * segmentDepth - depth / 2;
-            const x2 = (k + 1) * segmentWidth - width / 2;
-            const z2 = z1;
-            const x3 = x1;
-            const z3 = (j + 1) * segmentDepth - depth / 2;
-            const x4 = x1;
-            const z4 = z3;
-            const x5 = x2;
-            const z5 = z2;
-            const x6 = x2;
-            const z6 = z3;
-            if (i === 0) {
-              positions.push(x1, y, z1, x3, y, z3, x2, y, z2, x4, y, z4, x6, y, z6, x5, y, z5);
-            } else {
-              positions.push(x1, y, z1, x2, y, z2, x3, y, z3, x4, y, z4, x5, y, z5, x6, y, z6);
-            }
-          }
-        }
-      }
-      for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < depthSegments; j++) {
-          for (let k = 0; k < widthSegments; k++) {
-            const x = i * width - width / 2;
-            const y1 = j * segmentHeight - height2 / 2;
-            const z1 = k * segmentDepth - depth / 2;
-            const y2 = (j + 1) * segmentHeight - height2 / 2;
-            const z2 = z1;
-            const y3 = y1;
-            const z3 = (k + 1) * segmentDepth - depth / 2;
-            const y4 = y1;
-            const z4 = z3;
-            const y5 = y2;
-            const z5 = z2;
-            const y6 = y2;
-            const z6 = z3;
-            if (i === 0) {
-              positions.push(x, y1, z1, x, y2, z2, x, y3, z3, x, y4, z4, x, y5, z5, x, y6, z6);
-            } else {
-              positions.push(x, y1, z1, x, y3, z3, x, y2, z2, x, y4, z4, x, y6, z6, x, y5, z5);
+      createSide("x", "y", "z", width, height2, depth, widthSegments, heightSegments, "front");
+      createSide("x", "y", "z", width, height2, -depth, widthSegments, heightSegments, "back");
+      createSide("x", "z", "y", width, depth, height2, widthSegments, depthSegments, "back");
+      createSide("x", "z", "y", width, depth, -height2, widthSegments, depthSegments, "front");
+      createSide("z", "y", "x", depth, height2, width, depthSegments, heightSegments, "back");
+      createSide("z", "y", "x", depth, height2, -width, depthSegments, heightSegments, "front");
+      function createSide(x, y, z, xLength, yLength, depth2, xSegments, ySegments, direction) {
+        const point = {};
+        point[x] = [];
+        point[y] = [];
+        point[z] = [];
+        const segmentX = xLength / xSegments;
+        const segmentY = yLength / ySegments;
+        const z1 = depth2 / 2;
+        for (let i = 0; i < ySegments; i++) {
+          for (let j = 0; j < xSegments; j++) {
+            const x1 = j * segmentX - xLength / 2;
+            const y1 = i * segmentY - yLength / 2;
+            const x2 = (j + 1) * segmentX - xLength / 2;
+            const y2 = (i + 1) * segmentY - yLength / 2;
+            point[x].push(x1);
+            point[y].push(y1);
+            point[z].push(z1);
+            point[x].push(x2);
+            point[y].push(y1);
+            point[z].push(z1);
+            point[x].push(x1);
+            point[y].push(y2);
+            point[z].push(z1);
+            point[x].push(x1);
+            point[y].push(y2);
+            point[z].push(z1);
+            point[x].push(x2);
+            point[y].push(y1);
+            point[z].push(z1);
+            point[x].push(x2);
+            point[y].push(y2);
+            point[z].push(z1);
+            if (direction === "front") {
+              positions.push(point.x[0], point.y[0], point.z[0], point.x[1], point.y[1], point.z[1], point.x[2], point.y[2], point.z[2], point.x[3], point.y[3], point.z[3], point.x[4], point.y[4], point.z[4], point.x[5], point.y[5], point.z[5]);
+            } else if (direction === "back") {
+              positions.push(point.x[0], point.y[0], point.z[0], point.x[2], point.y[2], point.z[2], point.x[1], point.y[1], point.z[1], point.x[3], point.y[3], point.z[3], point.x[5], point.y[5], point.z[5], point.x[4], point.y[4], point.z[4]);
             }
           }
         }
@@ -669,11 +640,13 @@
   var triangleShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   var triangleMesh = new Sandbox.Mesh(geometry, triangleShader);
   var volume = new Sandbox.Volume();
+  volume.add(triangleMesh);
   var plane = new Sandbox.Plane(0.625, 0.625, 1, 1);
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
   planeShader.setUniform("uResolution", [canvas.clientWidth, canvas.clientHeight], "2f");
   var planeMesh = new Sandbox.Mesh(plane, planeShader);
-  planeMesh.setPosition(0, 0, 0);
+  planeMesh.setPosition(-1, 0.5, 0);
+  volume.add(planeMesh);
   var circle = new Sandbox.Circle(0.375, 64);
   var circleMesh = new Sandbox.Mesh(circle, planeShader);
   circleMesh.setPosition(1, 0, 0);
@@ -694,9 +667,7 @@
   cubeColors.push(0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1);
   cube.setAttribute("aColor", new Float32Array(cubeColors), 3);
   var cubeMesh = new Sandbox.Mesh(cube, triangleShader);
-  console.log(cubeMesh, triangleMesh);
   volume.add(cubeMesh);
-  volume.add(planeMesh);
   var camera = new Sandbox.Orthographic(-1 * aspectRatio, 1 * aspectRatio, -1, 1, -1, 1);
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
@@ -704,6 +675,9 @@
   var draw = () => {
     renderer.render(volume, camera);
     time += 0.01;
+    triangleMesh.setScale((Math.sin(time) + 1) / 2, (Math.sin(time) + 1) / 2, 1);
+    planeMesh.setRotationZ(time * 100);
+    circleMesh.setPosition(1, 0.5, 0);
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
@@ -728,6 +702,6 @@
   });
   rotateZInput.addEventListener("input", (event) => {
     console.log("triangle Z: ", event.target.value);
-    planeMesh.setPosition(0, 0, event.target.value);
+    triangleMesh.setPosition(0, 0, event.target.value);
   });
 })();
