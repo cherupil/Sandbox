@@ -6,13 +6,18 @@ export default class Renderer {
 
 		this.resize = this.resize.bind(this)
 		this.render = this.render.bind(this)
+		this.pixelRatio = 2.0
+	}
+
+	setPixelRatio(ratio) {
+		this.pixelRatio = ratio
 	}
 
 	resize() {
-        const displayWidth = this.gl.canvas.clientWidth
-        const displayHeight = this.gl.canvas.clientHeight
+        const displayWidth = this.gl.canvas.clientWidth * this.pixelRatio
+        const displayHeight = this.gl.canvas.clientHeight * this.pixelRatio
 
-        const needsResize = this.gl.canvas.width !== displayWidth || this.gl.canvas.height !== displayHeight
+        const needsResize = this.gl.canvas.width * this.pixel !== displayWidth || this.gl.canvas.height * this.pixelRatio !== displayHeight
 
         if (needsResize) {
             this.gl.canvas.width = displayWidth

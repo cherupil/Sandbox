@@ -9,10 +9,12 @@ import Sandbox from './modules/Sandbox.js'
 let aspectRatio = window.innerWidth / window.innerHeight
 const canvas = document.getElementById('webgl')
 const renderer = new Sandbox.Renderer(canvas)
+renderer.setPixelRatio(1)
 
 //Plane
 const circle = new Sandbox.Circle(0.25, 64)
 const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
+planeShader.setUniform('uTime', 0, '1f')
 const planeMesh = new Sandbox.Mesh(circle, planeShader)
 planeMesh.setPosition(0, 0, 0.30)
 
@@ -40,9 +42,8 @@ let time = 0
 const draw = () => {
 	renderer.render(volume, camera)
 	time += 0.1
+	planeMesh.shader.uniforms.uTime.value = time
 	cubeMesh.shader.uniforms.uTime.value = time
-	//cubeMesh.setRotationX(3 * time)
-	//cubeMesh.setRotationY(4.5 * time)
 	window.requestAnimationFrame(draw)
 }
 
