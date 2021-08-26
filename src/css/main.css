@@ -35,7 +35,7 @@
 }
 
 main {
-	background-color: var(--green-100);
+	background-color: var(--blue-400);
 	height: 100vh;
 	width: 100vw;
 }
@@ -86,4 +86,8 @@ input[type="range"]::-webkit-slider-thumb {
 	margin-top: -14px;
 	-webkit-appearance: none;
 	width: 32px;
+}
+
+input {
+	display: none !important;
 }

@@ -23,11 +23,6 @@ export default class Cube extends Geometry {
 		createSide('z', 'y', 'x', depth, height, -width, depthSegments, heightSegments, 'front')
 
 		function createSide(x, y, z, xLength, yLength, depth, xSegments, ySegments, direction) {
-			const point = {}
-			point[x] = []
-			point[y] = []
-			point[z] = []
-
 			const segmentX = xLength / xSegments
 			const segmentY = yLength / ySegments
 
@@ -35,6 +30,11 @@ export default class Cube extends Geometry {
 
 			for (let i = 0; i < ySegments; i++) {
 				for (let j = 0; j < xSegments; j++) {
+					const point = {}
+					point[x] = []
+					point[y] = []
+					point[z] = []
+					
 					const x1 = (j * segmentX) - xLength / 2
 					const y1 = (i * segmentY) - yLength / 2
 					const x2 = ((j + 1) * segmentX) - xLength / 2
