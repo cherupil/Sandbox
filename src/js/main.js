@@ -15,6 +15,7 @@ renderer.setPixelRatio(1)
 const circle = new Sandbox.Circle(0.5, 64)
 const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
 planeShader.setUniform('uTime', 0, '1f')
+planeShader.setUniform('uResolution', [renderer.gl.canvas.width, renderer.gl.canvas.height], '2f')
 planeShader.setUniform('uRed', 1, '1f')
 planeShader.setUniform('uGreen', .25, '1f')
 planeShader.setUniform('uBlue', .5, '1f')
@@ -39,6 +40,7 @@ volume.add(planeMesh)
 //Set Viewport
 const camera = new Sandbox.Orthographic(-1 * aspectRatio, 1 * aspectRatio, -1, 1, -1, 1)
 renderer.resize()
+planeMesh.shader.uniforms.uResolution.value = [renderer.gl.canvas.width, renderer.gl.canvas.height]
 
 //Clear canvas
 renderer.gl.clearColor(0, 0, 0, 0)
@@ -58,6 +60,7 @@ window.addEventListener('resize', () => {
 		aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height
 		camera.setLeft(-1 * aspectRatio)
 		camera.setRight(1 * aspectRatio)
+		planeMesh.shader.uniforms.uResolution.value = [renderer.gl.canvas.width, renderer.gl.canvas.height]
 	}
 })
 window.requestAnimationFrame(draw)
