@@ -94,6 +94,7 @@ blue.addEventListener('input', event => {
 
 controls.addEventListener('mousedown', event => {
 	if (event.target.classList.contains('controls')) {
+		event.preventDefault()
 		mouse.x1 = event.clientX
 		mouse.y1 = event.clientY
 		document.onmouseup = removeDrag
@@ -102,6 +103,7 @@ controls.addEventListener('mousedown', event => {
 })
 
 const dragControls = (event) => {
+	event.preventDefault()
 	mouse.x2 = mouse.x1 - event.clientX
 	mouse.y2 = mouse.y1 - event.clientY
 	mouse.x1 = event.clientX

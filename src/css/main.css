@@ -73,7 +73,7 @@ input[type="range"] {
 	padding: 48px 16px 0 32px;
 	position: fixed;
 	transform: translateY(calc(100% + 64px));
-	width: calc(25vw - 64px);
+	width: 360px;
 	z-index: 3;
 }
 
