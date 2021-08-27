@@ -65,9 +65,17 @@ window.addEventListener('resize', () => {
 })
 window.requestAnimationFrame(draw)
 
+const controls = document.querySelector('.controls')
 const red = document.getElementById('red')
 const green = document.getElementById('green')
 const blue = document.getElementById('blue')
+
+const mouse = {
+	x1: 0,
+	y1: 0,
+	x2: 0,
+	y2: 0
+}
 
 red.addEventListener('input', event => {
 	cubeMesh.shader.uniforms.uRed.value = event.target.value
@@ -83,3 +91,32 @@ blue.addEventListener('input', event => {
 	cubeMesh.shader.uniforms.uBlue.value = event.target.value
 	planeMesh.shader.uniforms.uBlue.value = event.target.value
 })
+
+controls.addEventListener('mousedown', event => {
+	if (event.target.classList.contains('controls')) {
+		mouse.x1 = event.clientX
+		mouse.y1 = event.clientY
+		document.onmouseup = removeDrag
+		document.onmousemove = dragControls
+	}
+})
+
+const dragControls = (event) => {
+	mouse.x2 = mouse.x1 - event.clientX
+	mouse.y2 = mouse.y1 - event.clientY
+	mouse.x1 = event.clientX
+	mouse.y1 = event.clientY
+
+	controls.style.top = `${controls.offsetTop - mouse.y2}px`
+	controls.style.bottom = `auto`
+	controls.style.left = `${controls.offsetLeft - mouse.x2}px`
+}
+
+const removeDrag = () => {
+	document.onmouseup = null
+	document.onmousemove = null
+}
+
+window.setTimeout(() => {
+	controls.classList.add('active')
+}, 500)
