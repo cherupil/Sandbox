@@ -11,9 +11,11 @@
     <body>
     	<main>
     		<canvas id="webgl"></canvas>
-            <input type="range" min="-2" max="2.01" step="0.01" value="0" id="rotateX">
-            <input type="range" min="0" max="360" step="1" value="0" id="rotateY">
-            <input type="range" min="-1.01" max="1.01" step="0.01" value="0" id="rotateZ">
+            <div class="controls">
+                <input type="range" min="0" max="1" step="0.01" value="1" id="red">
+                <input type="range" min="0" max="1" step="0.01" value="0.25" id="green">
+                <input type="range" min="0" max="1" step="0.01" value="0.5" id="blue">
+            </div>
     	</main>
         <script type="module" src="dist/js/main.js"></script>
     </body>

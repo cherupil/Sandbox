@@ -12,16 +12,22 @@ const renderer = new Sandbox.Renderer(canvas)
 renderer.setPixelRatio(1)
 
 //Plane
-const circle = new Sandbox.Circle(0.25, 64)
+const circle = new Sandbox.Circle(0.5, 64)
 const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
 planeShader.setUniform('uTime', 0, '1f')
+planeShader.setUniform('uRed', 1, '1f')
+planeShader.setUniform('uGreen', .25, '1f')
+planeShader.setUniform('uBlue', .5, '1f')
 const planeMesh = new Sandbox.Mesh(circle, planeShader)
-planeMesh.setPosition(0, 0, 0.30)
+planeMesh.setPosition(0, 0, 0.625)
 
 //Cube
-const cube = new Sandbox.Cube(0.5, 0.5, 0.5, 64, 64, 64)
+const cube = new Sandbox.Cube(1, 1, 1, 64, 64, 64)
 const cubeShader = new Sandbox.Program(renderer.gl, cubeShaderVertex, cubeShaderFragment)
 cubeShader.setUniform('uTime', 0, '1f')
+cubeShader.setUniform('uRed', 1, '1f')
+cubeShader.setUniform('uGreen', .25, '1f')
+cubeShader.setUniform('uBlue', .5, '1f')
 const cubeMesh = new Sandbox.Mesh(cube, cubeShader)
 cubeMesh.setRotationX(37.5)
 cubeMesh.setRotationY(45)
@@ -55,3 +61,22 @@ window.addEventListener('resize', () => {
 	}
 })
 window.requestAnimationFrame(draw)
+
+const red = document.getElementById('red')
+const green = document.getElementById('green')
+const blue = document.getElementById('blue')
+
+red.addEventListener('input', event => {
+	cubeMesh.shader.uniforms.uRed.value = event.target.value
+	planeMesh.shader.uniforms.uRed.value = event.target.value
+})
+
+green.addEventListener('input', event => {
+	cubeMesh.shader.uniforms.uGreen.value = event.target.value
+	planeMesh.shader.uniforms.uGreen.value = event.target.value
+})
+
+blue.addEventListener('input', event => {
+	cubeMesh.shader.uniforms.uBlue.value = event.target.value
+	planeMesh.shader.uniforms.uBlue.value = event.target.value
+})

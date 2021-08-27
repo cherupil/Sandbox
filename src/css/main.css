@@ -35,7 +35,7 @@
 }
 
 main {
-	background-color: #260306;
+	background-color: #030303;
 	height: 100vh;
 	width: 100vw;
 }
@@ -46,48 +46,67 @@ canvas#webgl {
 	position: fixed;
 	top: 0;
 	width: 100vw;
+	z-index: 1;
 }
 
 input[type="range"] {
 	background-color: transparent;
-	left: 32px;
 	padding-bottom: 16px;
 	padding-right: 16px;
-	position: fixed;
 	-webkit-appearance: none;
+}
+
+.controls {
+	-webkit-backdrop-filter: saturate(180%) blur(20px);
+	background-color: rgba(127, 127, 127, 0.125);
+	border: 2px solid rgba(127, 127, 127, 0.25);
+	border-radius: 24px;
+	//bottom: 64px;
+	bottom: 20%;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.25);
+	display: flex;
+	//display: none;
+	flex-direction: column;
+	left: 64px;
+	left: 50%;
+	padding: 48px 16px 0 32px;
+	position: fixed;
+	transform: translate(-50%, 50%);
 	width: calc(25vw - 64px);
 	z-index: 3;
 }
 
-#rotateX {
-	bottom: 192px;
-}
-
-#rotateY {
-	bottom: 128px;
-}
-
-#rotateZ {
-	bottom: 64px;
-}
-
 input[type="range"]::-webkit-slider-runnable-track {
-	background-color: rgba(0, 0, 0, 0.5);
+	background-color: rgba(192, 192, 192, 0.5);
 	border-radius: 2px;
 	height: 4px;
+	margin-bottom: 32px;
+	transition: background-color 200ms ease, box-shadow 200ms ease;
 	width: 100%;
 }
 
 input[type="range"]::-webkit-slider-thumb {
-	background-color: white;
+	background-color: rgba(63, 63, 63, 1);
 	border-radius: 50%;
-	box-shadow: 0 0 4px 0 rgba(0,0,0,0.24), 0 0 8px 0 rgba(0,0,0,0.12);
+	box-shadow: 0 0 8px 0 rgba(0,0,0,0.25), 0 0 16px 0 rgba(0,0,0,0.125);
+	cursor: pointer;
 	height: 32px;
 	margin-top: -14px;
+	transition: background-color 200ms ease, border 200ms ease, box-shadow 200ms ease;
 	-webkit-appearance: none;
 	width: 32px;
 }
 
-input {
-	display: none !important;
+input[type="range"]::-webkit-slider-thumb:hover {
+	border: 2px solid rgba(255, 255, 255, 1);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+	border: 2px solid rgba(255, 255, 255, 1);
+	box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
+input[type="range"]:active::-webkit-slider-runnable-track {
+	background-color: rgba(255, 255, 255, 1);
+	box-shadow: 0 0 4px rgba(255, 255, 255, 1);
 }
