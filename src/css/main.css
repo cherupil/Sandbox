@@ -35,7 +35,7 @@
 }
 
 main {
-	background-color: #030303;
+	background-color: var(--blue-500);
 	height: 100vh;
 	width: 100vw;
 }

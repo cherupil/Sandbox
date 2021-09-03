@@ -1,5 +1,6 @@
 import Renderer from './Renderer.js'
 import Orthographic from './Orthographic.js'
+import Perspective from './Perspective.js'
 import Volume from './Volume.js'
 import Mesh from './Mesh.js'
 import Geometry from './Geometry.js'
@@ -20,6 +21,7 @@ export default class Sandbox {
 
 Sandbox.Renderer = Renderer
 Sandbox.Orthographic = Orthographic
+Sandbox.Perspective = Perspective
 Sandbox.Volume = Volume
 Sandbox.Mesh = Mesh
 Sandbox.Geometry = Geometry

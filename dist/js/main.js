@@ -1,56 +1,873 @@
-(()=>{var ot=`attribute vec4 aPosition;
+(() => {
+  // src/shaders/cube/vertex.glsl
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aColor;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vColor;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	/* position.x += sin(16.0 * position.z + uTime) / 100.0;\n	position.y += sin(16.0 * position.x + uTime) / 100.0;\n	position.z += sin(16.0 * position.y + uTime) / 100.0; */\n	gl_Position = position;\n	vColor = aColor;\n}";
 
-uniform mat4 uMatrix;
-uniform float uTime;
+  // src/shaders/cube/fragment.glsl
+  var fragment_default = "precision mediump float;\n\nuniform float uRed;\nuniform float uGreen;\nuniform float uBlue;\n\nvarying vec3 vColor;\n\nvoid main() {\n	gl_FragColor = vec4(vColor, 1.0);\n}";
 
-void main() {
-	vec4 position = uMatrix * aPosition;
-	float zToDivideBy = 1.0 + position.z * 0.0;
-	position.x += sin(position.y * 24.0 + (uTime * 1.0)) / 160.0;
-	position.y += sin(position.z * 40.0 + (uTime * 1.1)) / 160.0;
-	position.z += sin(position.x * 32.0 + (uTime * 1.2)) / 160.0;
-	gl_Position = vec4(position.xy / zToDivideBy, position.zw);
-}`;var it=`precision mediump float;
+  // src/js/modules/Renderer.js
+  var Renderer = class {
+    constructor(element) {
+      this.gl = element.getContext("webgl", {
+        powerPreference: "high-performance"
+      });
+      this.resize = this.resize.bind(this);
+      this.render = this.render.bind(this);
+      this.pixelRatio = 2;
+    }
+    setPixelRatio(ratio) {
+      this.pixelRatio = ratio;
+    }
+    resize() {
+      const displayWidth = this.gl.canvas.clientWidth * this.pixelRatio;
+      const displayHeight = this.gl.canvas.clientHeight * this.pixelRatio;
+      const needsResize = this.gl.canvas.width * this.pixel !== displayWidth || this.gl.canvas.height * this.pixelRatio !== displayHeight;
+      if (needsResize) {
+        this.gl.canvas.width = displayWidth;
+        this.gl.canvas.height = displayHeight;
+        this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+        return true;
+      }
+      return false;
+    }
+    render(volume2, camera2) {
+      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+      this.gl.enable(this.gl.CULL_FACE);
+      this.gl.enable(this.gl.DEPTH_TEST);
+      let lastShader = null;
+      let lastBuffer = null;
+      for (const object of volume2.objects) {
+        object.setProjectionMatrix(camera2.matrix);
+        let bindBuffers = false;
+        if (object.shader.program !== lastShader) {
+          this.gl.useProgram(object.shader.program);
+          lastShader = object.shader.program;
+          bindBuffers = true;
+        }
+        if (bindBuffers || object.geometry.attributes != lastBuffer) {
+          for (const attribute in object.geometry.attributes) {
+            this.gl.enableVertexAttribArray(object.geometry.attributes[attribute].location);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, object.geometry.attributes[attribute].buffer);
+            const size = object.geometry.attributes[attribute].size;
+            const type = this.gl.FLOAT;
+            const normalize = false;
+            const stride = 0;
+            const offset = 0;
+            this.gl.vertexAttribPointer(object.geometry.attributes[attribute].location, size, type, normalize, stride, offset);
+          }
+          lastBuffer = object.geometry.attributes;
+        }
+        for (const uniform in object.shader.uniforms) {
+          if (uniform === "uMatrix") {
+            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix);
+          } else {
+            switch (object.shader.uniforms[uniform].type) {
+              case "1f":
+                this.gl.uniform1f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value);
+                break;
+              case "2f":
+                this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1]);
+                break;
+              case "3f":
+                this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1], object.shader.uniforms[uniform].value[2]);
+                break;
+              case "mat3":
+                this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value);
+                break;
+              case "mat4":
+                this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value);
+                break;
+              default:
+                break;
+            }
+          }
+        }
+        const primitiveType = this.gl[object.drawMode];
+        const vertexOffset = 0;
+        const count = object.geometry.attributes.aPosition.count;
+        this.gl.drawArrays(primitiveType, vertexOffset, count);
+      }
+    }
+  };
 
-uniform vec2 uResolution;
-uniform float uRed;
-uniform float uGreen;
-uniform float uBlue;
+  // src/js/modules/Orthographic.js
+  var Orthographic = class {
+    constructor(left, right, bottom, top, near, far) {
+      this.left = left;
+      this.right = right;
+      this.bottom = bottom;
+      this.top = top;
+      this.near = near;
+      this.far = far;
+      this._createMatrix();
+    }
+    _createMatrix() {
+      this.matrix = [
+        2 / (this.right - this.left),
+        0,
+        0,
+        0,
+        0,
+        2 / (this.top - this.bottom),
+        0,
+        0,
+        0,
+        0,
+        -2 / (this.far - this.near),
+        0,
+        -(this.right + this.left) / (this.right - this.left),
+        -(this.top + this.bottom) / (this.top - this.bottom),
+        -(this.far + this.near) / (this.far - this.near),
+        1
+      ];
+    }
+    setLeft(left) {
+      this.left = left;
+      this._createMatrix();
+    }
+    setRight(right) {
+      this.right = right;
+      this._createMatrix();
+    }
+    setBottom(bottom) {
+      this.bottom = bottom;
+      this._createMatrix();
+    }
+    setTop(top) {
+      this.top = top;
+      this._createMatrix();
+    }
+    setNear(near) {
+      this.near = near;
+      this._createMatrix();
+    }
+    setFar(far) {
+      this.far = far;
+      this._createMatrix();
+    }
+  };
 
-void main() {
-	vec3 outer = vec3(uRed/2.0, uGreen/4.0, uBlue/4.0);
-	vec3 inner = vec3(uRed/8.0, uGreen/16.0, uBlue/16.0);
-	vec2 center = vec2(0.5);
-	vec2 st = gl_FragCoord.xy/uResolution.xy;
-	float dist = distance(st, center) * 8.0;
-	vec3 mixed = mix(outer, inner, dist);
-	gl_FragColor = vec4(mixed, 1.0);
-}`;var rt=`attribute vec4 aPosition;
+  // src/js/modules/Perspective.js
+  var Perspective = class {
+    constructor(fieldOfView, aspectRatio2, near, far) {
+      this.fieldOfView = fieldOfView * Math.PI / 180;
+      this.aspectRatio = aspectRatio2;
+      this.near = near;
+      this.far = far;
+      this._createMatrix();
+    }
+    _createMatrix() {
+      this.top = this.near * Math.tan(this.fieldOfView / 2);
+      this.bottom = -this.top;
+      this.right = this.top * this.aspectRatio;
+      this.left = -this.right;
+      this.matrix = [
+        2 * this.near / (this.right - this.left),
+        0,
+        0,
+        0,
+        0,
+        2 * this.near / (this.top - this.bottom),
+        0,
+        0,
+        0,
+        0,
+        -(this.far + this.near) / (this.far - this.near),
+        -1,
+        -this.near * (this.right + this.left) / (this.right - this.left),
+        -this.near * (this.top + this.bottom) / (this.top - this.bottom),
+        2 * this.far * this.near / (this.near - this.far),
+        0
+      ];
+    }
+    setFieldOfView(fieldOfView) {
+      this.fieldOfView = fieldOfView * Math.PI / 180;
+      this._createMatrix();
+    }
+    setAspectRatio(aspectRatio2) {
+      this.aspectRatio = aspectRatio2;
+      this._createMatrix();
+    }
+    setNear(near) {
+      this.near = near;
+      this._createMatrix();
+    }
+    setFar(far) {
+      this.far = far;
+      this._createMatrix();
+    }
+  };
 
-uniform mat4 uMatrix;
-uniform float uTime;
+  // src/js/modules/Volume.js
+  var Volume = class {
+    constructor() {
+      this.objects = [];
+    }
+    add(object) {
+      this.objects.push(object);
+      this.objects.sort((a, b) => {
+        const bufferDiff = a.geometry.id - b.geometry.id;
+        if (bufferDiff) {
+          return bufferDiff;
+        }
+        return a.shader.id - b.shader.id;
+      });
+    }
+  };
 
-void main() {
-	vec4 position = uMatrix * aPosition;
-	float zToDivideBy = 1.0 + position.z * 0.0;
-	position.x += sin(position.y * 24.0 + (uTime * 1.0)) / 160.0;
-	position.y += sin(position.z * 40.0 + (uTime * 1.1)) / 160.0;
-	position.z += sin(position.x * 32.0 + (uTime * 1.2)) / 160.0;
-	gl_Position = vec4(position.xy / zToDivideBy, position.zw);
-}`;var at=`precision mediump float;
+  // src/js/modules/Matrix.js
+  var Matrix = class {
+    static multiply(a, b) {
+      const b00 = b[0 * 4 + 0];
+      const b01 = b[0 * 4 + 1];
+      const b02 = b[0 * 4 + 2];
+      const b03 = b[0 * 4 + 3];
+      const b10 = b[1 * 4 + 0];
+      const b11 = b[1 * 4 + 1];
+      const b12 = b[1 * 4 + 2];
+      const b13 = b[1 * 4 + 3];
+      const b20 = b[2 * 4 + 0];
+      const b21 = b[2 * 4 + 1];
+      const b22 = b[2 * 4 + 2];
+      const b23 = b[2 * 4 + 3];
+      const b30 = b[3 * 4 + 0];
+      const b31 = b[3 * 4 + 1];
+      const b32 = b[3 * 4 + 2];
+      const b33 = b[3 * 4 + 3];
+      const a00 = a[0 * 4 + 0];
+      const a01 = a[0 * 4 + 1];
+      const a02 = a[0 * 4 + 2];
+      const a03 = a[0 * 4 + 3];
+      const a10 = a[1 * 4 + 0];
+      const a11 = a[1 * 4 + 1];
+      const a12 = a[1 * 4 + 2];
+      const a13 = a[1 * 4 + 3];
+      const a20 = a[2 * 4 + 0];
+      const a21 = a[2 * 4 + 1];
+      const a22 = a[2 * 4 + 2];
+      const a23 = a[2 * 4 + 3];
+      const a30 = a[3 * 4 + 0];
+      const a31 = a[3 * 4 + 1];
+      const a32 = a[3 * 4 + 2];
+      const a33 = a[3 * 4 + 3];
+      return [
+        b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30,
+        b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31,
+        b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32,
+        b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33,
+        b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30,
+        b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31,
+        b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32,
+        b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33,
+        b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30,
+        b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31,
+        b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32,
+        b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33,
+        b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30,
+        b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31,
+        b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32,
+        b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33
+      ];
+    }
+    static identity() {
+      return [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ];
+    }
+    static translate(tx, ty, tz) {
+      return [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        tx,
+        ty,
+        tz,
+        1
+      ];
+    }
+    static rotateX(angle) {
+      const radians = angle * Math.PI / 180;
+      const cos = Math.cos(radians);
+      const sin = Math.sin(radians);
+      return [
+        1,
+        0,
+        0,
+        0,
+        0,
+        cos,
+        sin,
+        0,
+        0,
+        -sin,
+        cos,
+        0,
+        0,
+        0,
+        0,
+        1
+      ];
+    }
+    static rotateY(angle) {
+      const radians = angle * Math.PI / 180;
+      const cos = Math.cos(radians);
+      const sin = Math.sin(radians);
+      return [
+        cos,
+        0,
+        -sin,
+        0,
+        0,
+        1,
+        0,
+        0,
+        sin,
+        0,
+        cos,
+        0,
+        0,
+        0,
+        0,
+        1
+      ];
+    }
+    static rotateZ(angle) {
+      const radians = angle * Math.PI / 180;
+      const cos = Math.cos(radians);
+      const sin = Math.sin(radians);
+      return [
+        cos,
+        sin,
+        0,
+        0,
+        -sin,
+        cos,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ];
+    }
+    static scale(sx, sy, sz) {
+      return [
+        sx,
+        0,
+        0,
+        0,
+        0,
+        sy,
+        0,
+        0,
+        0,
+        0,
+        sz,
+        0,
+        0,
+        0,
+        0,
+        1
+      ];
+    }
+  };
 
-uniform float uRed;
-uniform float uGreen;
-uniform float uBlue;
+  // src/js/modules/Mesh.js
+  var Mesh = class {
+    constructor(geometry, shader) {
+      this.geometry = geometry;
+      this.shader = shader;
+      this.position = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      this.rotation = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      this.scale = {
+        x: 1,
+        y: 1,
+        z: 1
+      };
+      this.localMatrix = Matrix.identity();
+      this._setAttributeData();
+      this._setUniformData();
+      this._setDrawMode();
+    }
+    _setAttributeData() {
+      for (const attribute in this.geometry.attributes) {
+        this.geometry.attributes[attribute].location = this.shader.gl.getAttribLocation(this.shader.program, this.geometry.attributes[attribute].name);
+        this.geometry.attributes[attribute].buffer = this.shader.gl.createBuffer();
+        this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].buffer);
+        this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].data, this.shader.gl.STATIC_DRAW);
+      }
+    }
+    _setUniformData() {
+      if (this.shader.uniforms) {
+        for (const uniform in this.shader.uniforms) {
+          this.shader.uniforms[uniform].location = this.shader.gl.getUniformLocation(this.shader.program, this.shader.uniforms[uniform].name);
+        }
+      }
+    }
+    _setDrawMode() {
+      this.drawMode = this.geometry.type ?? "TRIANGLES";
+    }
+    _recalculateModelMatrix() {
+      const identity = Matrix.identity();
+      const translation = Matrix.translate(this.position.x, this.position.y, this.position.z);
+      const rotationX = Matrix.rotateX(this.rotation.x);
+      const rotationY = Matrix.rotateY(this.rotation.y);
+      const rotationZ = Matrix.rotateZ(this.rotation.z);
+      const scale = Matrix.scale(this.scale.x, this.scale.y, this.scale.z);
+      let matrix = Matrix.multiply(identity, translation);
+      matrix = Matrix.multiply(matrix, rotationX);
+      matrix = Matrix.multiply(matrix, rotationY);
+      matrix = Matrix.multiply(matrix, rotationZ);
+      matrix = Matrix.multiply(matrix, scale);
+      this.localMatrix = matrix;
+    }
+    setProjectionMatrix(matrix) {
+      this._recalculateModelMatrix();
+      this.projectionMatrix = Matrix.multiply(matrix, this.localMatrix);
+    }
+    setPosition(x, y, z) {
+      this.position = { x, y, z };
+      this._recalculateModelMatrix();
+    }
+    setRotationX(angle) {
+      this.rotation.x = angle;
+      this._recalculateModelMatrix();
+    }
+    setRotationY(angle) {
+      this.rotation.y = angle;
+      this._recalculateModelMatrix();
+    }
+    setRotationZ(angle) {
+      this.rotation.z = angle;
+      this._recalculateModelMatrix();
+    }
+    setScale(x, y, z) {
+      this.scale = { x, y, z };
+      this._recalculateModelMatrix();
+    }
+  };
 
-void main() {
-	float sideLength = 0.25;
-	float diagonal = sqrt(pow(sideLength, 2.0) + pow(sideLength, 2.0));
-	float total = sqrt(pow(diagonal, 2.0) + pow(diagonal, 2.0));
-	float diff = ((total / 2.0) + gl_FragCoord.z) / total;
-	vec3 front = vec3((1.0 + uRed) - diff, (1.0 + uGreen) - diff, (1.0 + uBlue) - diff);
-	vec3 back = vec3(0.0, 0.0, 0.0);
-	vec3 final = mix(back, front, 2.25 - diff);
-	vec3 depth = vec3(pow(1.0 - diff, 8.0));
-	gl_FragColor = vec4(final + depth, 1.0);
-}`;var N=class{constructor(t){this.gl=t.getContext("webgl",{powerPreference:"high-performance"}),this.resize=this.resize.bind(this),this.render=this.render.bind(this),this.pixelRatio=2}setPixelRatio(t){this.pixelRatio=t}resize(){let t=this.gl.canvas.clientWidth*this.pixelRatio,e=this.gl.canvas.clientHeight*this.pixelRatio;return this.gl.canvas.width*this.pixel!==t||this.gl.canvas.height*this.pixelRatio!==e?(this.gl.canvas.width=t,this.gl.canvas.height=e,this.gl.viewport(0,0,this.gl.canvas.width,this.gl.canvas.height),!0):!1}render(t,e){this.gl.clear(this.gl.COLOR_BUFFER_BIT|this.gl.DEPTH_BUFFER_BIT),this.gl.enable(this.gl.CULL_FACE),this.gl.enable(this.gl.DEPTH_TEST);let o=null,i=null;for(let r of t.objects){r.setProjectionMatrix(e.matrix);let u=!1;if(r.shader.program!==o&&(this.gl.useProgram(r.shader.program),o=r.shader.program,u=!0),u||r.geometry.attributes!=i){for(let a in r.geometry.attributes){this.gl.enableVertexAttribArray(r.geometry.attributes[a].location),this.gl.bindBuffer(this.gl.ARRAY_BUFFER,r.geometry.attributes[a].buffer);let m=r.geometry.attributes[a].size,d=this.gl.FLOAT,x=!1,v=0,b=0;this.gl.vertexAttribPointer(r.geometry.attributes[a].location,m,d,x,v,b)}i=r.geometry.attributes}for(let a in r.shader.uniforms)if(a==="uMatrix")this.gl.uniformMatrix4fv(r.shader.uniforms[a].location,!1,r.projectionMatrix);else switch(r.shader.uniforms[a].type){case"1f":this.gl.uniform1f(r.shader.uniforms[a].location,r.shader.uniforms[a].value);break;case"2f":this.gl.uniform2f(r.shader.uniforms[a].location,r.shader.uniforms[a].value[0],r.shader.uniforms[a].value[1]);break;case"3f":this.gl.uniform2f(r.shader.uniforms[a].location,r.shader.uniforms[a].value[0],r.shader.uniforms[a].value[1],r.shader.uniforms[a].value[2]);break;case"mat3":this.gl.uniformMatrix3fv(r.shader.uniforms[a].location,!1,r.shader.uniforms[a].value);break;case"mat4":this.gl.uniformMatrix4fv(r.shader.uniforms[a].location,!1,r.shader.uniforms[a].value);break;default:break}let c=this.gl[r.drawMode],f=0,h=r.geometry.attributes.aPosition.count;this.gl.drawArrays(c,f,h)}}};var q=class{constructor(t,e,o,i,r,u){this.left=t,this.right=e,this.bottom=o,this.top=i,this.near=r,this.far=u,this._createMatrix()}_createMatrix(){this.matrix=[2/(this.right-this.left),0,0,0,0,2/(this.top-this.bottom),0,0,0,0,-2/(this.far-this.near),0,-(this.right+this.left)/(this.right-this.left),-(this.top+this.bottom)/(this.top-this.bottom),-(this.far+this.near)/(this.far-this.near),1]}setLeft(t){this.left=t,this._createMatrix()}setRight(t){this.right=t,this._createMatrix()}setBottom(t){this.bottom=t,this._createMatrix()}setTop(t){this.top=t,this._createMatrix()}setNear(t){this.near=t,this._createMatrix()}setFar(t){this.far=t,this._createMatrix()}};var W=class{constructor(){this.objects=[]}add(t){this.objects.push(t),this.objects.sort((e,o)=>{let i=e.geometry.id-o.geometry.id;return i||e.shader.id-o.shader.id})}};var p=class{static multiply(t,e){let o=e[0*4+0],i=e[0*4+1],r=e[0*4+2],u=e[0*4+3],c=e[1*4+0],f=e[1*4+1],h=e[1*4+2],a=e[1*4+3],m=e[2*4+0],d=e[2*4+1],x=e[2*4+2],v=e[2*4+3],b=e[3*4+0],M=e[3*4+1],w=e[3*4+2],T=e[3*4+3],A=t[0*4+0],y=t[0*4+1],R=t[0*4+2],_=t[0*4+3],s=t[1*4+0],B=t[1*4+1],E=t[1*4+2],F=t[1*4+3],j=t[2*4+0],I=t[2*4+1],k=t[2*4+2],Y=t[2*4+3],X=t[3*4+0],O=t[3*4+1],H=t[3*4+2],V=t[3*4+3];return[o*A+i*s+r*j+u*X,o*y+i*B+r*I+u*O,o*R+i*E+r*k+u*H,o*_+i*F+r*Y+u*V,c*A+f*s+h*j+a*X,c*y+f*B+h*I+a*O,c*R+f*E+h*k+a*H,c*_+f*F+h*Y+a*V,m*A+d*s+x*j+v*X,m*y+d*B+x*I+v*O,m*R+d*E+x*k+v*H,m*_+d*F+x*Y+v*V,b*A+M*s+w*j+T*X,b*y+M*B+w*I+T*O,b*R+M*E+w*k+T*H,b*_+M*F+w*Y+T*V]}static identity(){return[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}static translate(t,e,o){return[1,0,0,0,0,1,0,0,0,0,1,0,t,e,o,1]}static rotateX(t){let e=t*Math.PI/180,o=Math.cos(e),i=Math.sin(e);return[1,0,0,0,0,o,i,0,0,-i,o,0,0,0,0,1]}static rotateY(t){let e=t*Math.PI/180,o=Math.cos(e),i=Math.sin(e);return[o,0,-i,0,0,1,0,0,i,0,o,0,0,0,0,1]}static rotateZ(t){let e=t*Math.PI/180,o=Math.cos(e),i=Math.sin(e);return[o,i,0,0,-i,o,0,0,0,0,1,0,0,0,0,1]}static scale(t,e,o){return[t,0,0,0,0,e,0,0,0,0,o,0,0,0,0,1]}};var Z=class{constructor(t,e){this.geometry=t,this.shader=e,this.position={x:0,y:0,z:0},this.rotation={x:0,y:0,z:0},this.scale={x:1,y:1,z:1},this.localMatrix=p.identity(),this._setAttributeData(),this._setUniformData(),this._setDrawMode()}_setAttributeData(){for(let t in this.geometry.attributes)this.geometry.attributes[t].location=this.shader.gl.getAttribLocation(this.shader.program,this.geometry.attributes[t].name),this.geometry.attributes[t].buffer=this.shader.gl.createBuffer(),this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER,this.geometry.attributes[t].buffer),this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER,this.geometry.attributes[t].data,this.shader.gl.STATIC_DRAW)}_setUniformData(){if(this.shader.uniforms)for(let t in this.shader.uniforms)this.shader.uniforms[t].location=this.shader.gl.getUniformLocation(this.shader.program,this.shader.uniforms[t].name)}_setDrawMode(){this.drawMode=this.geometry.type??"TRIANGLES"}_recalculateModelMatrix(){let t=p.identity(),e=p.translate(this.position.x,this.position.y,this.position.z),o=p.rotateX(this.rotation.x),i=p.rotateY(this.rotation.y),r=p.rotateZ(this.rotation.z),u=p.scale(this.scale.x,this.scale.y,this.scale.z),c=p.multiply(t,e);c=p.multiply(c,o),c=p.multiply(c,i),c=p.multiply(c,r),c=p.multiply(c,u),this.localMatrix=c}setProjectionMatrix(t){this.projectionMatrix=p.multiply(t,this.localMatrix)}setPosition(t,e,o){this.position={x:t,y:e,z:o},this._recalculateModelMatrix()}setRotationX(t){this.rotation.x=t,this._recalculateModelMatrix()}setRotationY(t){this.rotation.y=t,this._recalculateModelMatrix()}setRotationZ(t){this.rotation.z=t,this._recalculateModelMatrix()}setScale(t,e,o){this.scale={x:t,y:e,z:o},this._recalculateModelMatrix()}};var ft=0,z=class{constructor(t){this.id=ft++,this.attributes={},this.setAttribute("aPosition",new Float32Array(t),3)}setAttribute(t,e,o){this.attributes[t]={name:t,data:e,size:o,count:e.length/o}}};var $=class extends z{constructor(t,e,o,i){let r=[],u=t/o,c=e/i;for(let f=0;f<i;f++)for(let h=0;h<o;h++){let a=h*u-t/2,m=f*c-e/2,d=0,x=(h+1)*u-t/2,v=m,b=a,M=(f+1)*c-e/2,w=a,T=M,A=x,y=v,R=x,_=M;r.push(a,m,d,x,v,d,b,M,d,w,T,d,A,y,d,R,_,d)}super(r)}};var K=class extends z{constructor(t,e){let o=[];o.push(0,0,0);for(let i=0;i<e;i++){let r=Math.cos(i*Math.PI/(e/2))*t,u=Math.sin(i*Math.PI/(e/2))*t,c=0;o.push(r,u,c)}o.push(Math.cos(0)*t,Math.sin(0)*t,0);super(o);this.type="TRIANGLE_FAN"}};var J=class extends z{constructor(t,e,o,i,r,u){let c=[];f("x","y","z",t,e,o,i,r,"front"),f("x","y","z",t,e,-o,i,r,"back"),f("x","z","y",t,o,e,i,u,"back"),f("x","z","y",t,o,-e,i,u,"front"),f("z","y","x",o,e,t,u,r,"back"),f("z","y","x",o,e,-t,u,r,"front");function f(h,a,m,d,x,v,b,M,w){let T=d/b,A=x/M,y=v/2;for(let R=0;R<M;R++)for(let _=0;_<b;_++){let s={};s[h]=[],s[a]=[],s[m]=[];let B=_*T-d/2,E=R*A-x/2,F=(_+1)*T-d/2,j=(R+1)*A-x/2;s[h].push(B),s[a].push(E),s[m].push(y),s[h].push(F),s[a].push(E),s[m].push(y),s[h].push(B),s[a].push(j),s[m].push(y),s[h].push(B),s[a].push(j),s[m].push(y),s[h].push(F),s[a].push(E),s[m].push(y),s[h].push(F),s[a].push(j),s[m].push(y),w==="front"?c.push(s.x[0],s.y[0],s.z[0],s.x[1],s.y[1],s.z[1],s.x[2],s.y[2],s.z[2],s.x[3],s.y[3],s.z[3],s.x[4],s.y[4],s.z[4],s.x[5],s.y[5],s.z[5]):w==="back"&&c.push(s.x[0],s.y[0],s.z[0],s.x[2],s.y[2],s.z[2],s.x[1],s.y[1],s.z[1],s.x[3],s.y[3],s.z[3],s.x[5],s.y[5],s.z[5],s.x[4],s.y[4],s.z[4])}}super(c)}};var mt=0,Q=class{constructor(t,e,o){let i=this._createShader(t,t.VERTEX_SHADER,e),r=this._createShader(t,t.FRAGMENT_SHADER,o);this.gl=t,this.id=mt++,this.program=this._createProgram(t,i,r),this.uniforms={uMatrix:{name:"uMatrix",value:null,type:"mat4"}}}_createShader(t,e,o){let i=t.createShader(e);if(t.shaderSource(i,o),t.compileShader(i),t.getShaderParameter(i,t.COMPILE_STATUS))return i;console.log(t.getShaderInfoLog(i)),t.deleteShader(i)}_createProgram(t,e,o){let i=t.createProgram();if(t.attachShader(i,e),t.attachShader(i,o),t.linkProgram(i),t.getProgramParameter(i,t.LINK_STATUS))return i;console.log(t.getProgramInfoLog(i)),t.deleteProgram(i)}setUniform(t,e,o){this.uniforms[t]={name:t,value:e,type:o}}};var l=class{static createColor(t,e,o){return{r:t/255,g:e/255,b:o/255}}};l.Renderer=N;l.Orthographic=q;l.Volume=W;l.Mesh=Z;l.Geometry=z;l.Plane=$;l.Circle=K;l.Cube=J;l.Program=Q;var U=window.innerWidth/window.innerHeight,dt=document.getElementById("webgl"),g=new l.Renderer(dt);g.setPixelRatio(1);var pt=new l.Circle(.5,64),S=new l.Program(g.gl,ot,it);S.setUniform("uTime",0,"1f");S.setUniform("uResolution",[g.gl.canvas.width,g.gl.canvas.height],"2f");S.setUniform("uRed",1,"1f");S.setUniform("uGreen",.25,"1f");S.setUniform("uBlue",.5,"1f");var C=new l.Mesh(pt,S);C.setPosition(0,0,.625);var gt=new l.Cube(1,1,1,64,64,64),D=new l.Program(g.gl,rt,at);D.setUniform("uTime",0,"1f");D.setUniform("uRed",1,"1f");D.setUniform("uGreen",.25,"1f");D.setUniform("uBlue",.5,"1f");var G=new l.Mesh(gt,D);G.setRotationX(37.5);G.setRotationY(45);var tt=new l.Volume;tt.add(G);tt.add(C);var et=new l.Orthographic(-1*U,1*U,-1,1,-1,1);g.resize();C.shader.uniforms.uResolution.value=[g.gl.canvas.width,g.gl.canvas.height];g.gl.clearColor(0,0,0,0);var st=0,nt=()=>{g.render(tt,et),st+=.1,C.shader.uniforms.uTime.value=st,G.shader.uniforms.uTime.value=st,window.requestAnimationFrame(nt)};window.addEventListener("resize",()=>{g.resize()&&(U=g.gl.canvas.width/g.gl.canvas.height,et.setLeft(-1*U),et.setRight(1*U),C.shader.uniforms.uResolution.value=[g.gl.canvas.width,g.gl.canvas.height])});window.requestAnimationFrame(nt);var L=document.querySelector(".controls"),xt=document.getElementById("red"),yt=document.getElementById("green"),vt=document.getElementById("blue"),P={x1:0,y1:0,x2:0,y2:0};xt.addEventListener("input",n=>{G.shader.uniforms.uRed.value=n.target.value,C.shader.uniforms.uRed.value=n.target.value});yt.addEventListener("input",n=>{G.shader.uniforms.uGreen.value=n.target.value,C.shader.uniforms.uGreen.value=n.target.value});vt.addEventListener("input",n=>{G.shader.uniforms.uBlue.value=n.target.value,C.shader.uniforms.uBlue.value=n.target.value});L.addEventListener("mousedown",n=>{n.target.classList.contains("controls")&&(n.preventDefault(),P.x1=n.clientX,P.y1=n.clientY,document.onmouseup=Mt,document.onmousemove=bt)});var bt=n=>{n.preventDefault(),P.x2=P.x1-n.clientX,P.y2=P.y1-n.clientY,P.x1=n.clientX,P.y1=n.clientY,L.style.top=`${L.offsetTop-P.y2}px`,L.style.bottom="auto",L.style.left=`${L.offsetLeft-P.x2}px`},Mt=()=>{document.onmouseup=null,document.onmousemove=null};window.setTimeout(()=>{L.classList.add("active")},500);})();
+  // src/js/modules/Geometry.js
+  var geometryId = 0;
+  var Geometry = class {
+    constructor(positions) {
+      this.id = geometryId++;
+      this.attributes = {};
+      this.setAttribute("aPosition", new Float32Array(positions), 3);
+    }
+    setAttribute(name, data, size) {
+      this.attributes[name] = {
+        name,
+        data,
+        size,
+        count: data.length / size
+      };
+    }
+  };
+
+  // src/js/modules/Plane.js
+  var Plane = class extends Geometry {
+    constructor(width, height, widthSegments, heightSegments) {
+      const positions = [];
+      const segmentWidth = width / widthSegments;
+      const segmentHeight = height / heightSegments;
+      for (let i = 0; i < heightSegments; i++) {
+        for (let j = 0; j < widthSegments; j++) {
+          const x1 = j * segmentWidth - width / 2;
+          const y1 = i * segmentHeight - height / 2;
+          const z = 0;
+          const x2 = (j + 1) * segmentWidth - width / 2;
+          const y2 = y1;
+          const x3 = x1;
+          const y3 = (i + 1) * segmentHeight - height / 2;
+          const x4 = x1;
+          const y4 = y3;
+          const x5 = x2;
+          const y5 = y2;
+          const x6 = x2;
+          const y6 = y3;
+          positions.push(x1, y1, z, x2, y2, z, x3, y3, z, x4, y4, z, x5, y5, z, x6, y6, z);
+        }
+      }
+      super(positions);
+    }
+  };
+
+  // src/js/modules/Circle.js
+  var Circle = class extends Geometry {
+    constructor(radius, segments) {
+      const positions = [];
+      positions.push(0, 0, 0);
+      for (let i = 0; i < segments; i++) {
+        const x = Math.cos(i * Math.PI / (segments / 2)) * radius;
+        const y = Math.sin(i * Math.PI / (segments / 2)) * radius;
+        const z = 0;
+        positions.push(x, y, z);
+      }
+      positions.push(Math.cos(0) * radius, Math.sin(0) * radius, 0);
+      super(positions);
+      this.type = "TRIANGLE_FAN";
+    }
+  };
+
+  // src/js/modules/Cube.js
+  var Cube = class extends Geometry {
+    constructor(width, height, depth, widthSegments, heightSegments, depthSegments) {
+      const positions = [];
+      createSide("x", "y", "z", width, height, depth, widthSegments, heightSegments, "front");
+      createSide("x", "y", "z", width, height, -depth, widthSegments, heightSegments, "back");
+      createSide("x", "z", "y", width, depth, height, widthSegments, depthSegments, "back");
+      createSide("x", "z", "y", width, depth, -height, widthSegments, depthSegments, "front");
+      createSide("z", "y", "x", depth, height, width, depthSegments, heightSegments, "back");
+      createSide("z", "y", "x", depth, height, -width, depthSegments, heightSegments, "front");
+      function createSide(x, y, z, xLength, yLength, depth2, xSegments, ySegments, direction) {
+        const segmentX = xLength / xSegments;
+        const segmentY = yLength / ySegments;
+        const z1 = depth2 / 2;
+        for (let i = 0; i < ySegments; i++) {
+          for (let j = 0; j < xSegments; j++) {
+            const point = {};
+            point[x] = [];
+            point[y] = [];
+            point[z] = [];
+            const x1 = j * segmentX - xLength / 2;
+            const y1 = i * segmentY - yLength / 2;
+            const x2 = (j + 1) * segmentX - xLength / 2;
+            const y2 = (i + 1) * segmentY - yLength / 2;
+            point[x].push(x1);
+            point[y].push(y1);
+            point[z].push(z1);
+            point[x].push(x2);
+            point[y].push(y1);
+            point[z].push(z1);
+            point[x].push(x1);
+            point[y].push(y2);
+            point[z].push(z1);
+            point[x].push(x1);
+            point[y].push(y2);
+            point[z].push(z1);
+            point[x].push(x2);
+            point[y].push(y1);
+            point[z].push(z1);
+            point[x].push(x2);
+            point[y].push(y2);
+            point[z].push(z1);
+            if (direction === "front") {
+              positions.push(point.x[0], point.y[0], point.z[0], point.x[1], point.y[1], point.z[1], point.x[2], point.y[2], point.z[2], point.x[3], point.y[3], point.z[3], point.x[4], point.y[4], point.z[4], point.x[5], point.y[5], point.z[5]);
+            } else if (direction === "back") {
+              positions.push(point.x[0], point.y[0], point.z[0], point.x[2], point.y[2], point.z[2], point.x[1], point.y[1], point.z[1], point.x[3], point.y[3], point.z[3], point.x[5], point.y[5], point.z[5], point.x[4], point.y[4], point.z[4]);
+            }
+          }
+        }
+      }
+      super(positions);
+    }
+  };
+
+  // src/js/modules/Program.js
+  var programId = 0;
+  var Program = class {
+    constructor(gl, vertex, fragment) {
+      const vertexShader = this._createShader(gl, gl.VERTEX_SHADER, vertex);
+      const fragmentShader = this._createShader(gl, gl.FRAGMENT_SHADER, fragment);
+      this.gl = gl;
+      this.id = programId++;
+      this.program = this._createProgram(gl, vertexShader, fragmentShader);
+      this.uniforms = {
+        uMatrix: {
+          name: "uMatrix",
+          value: null,
+          type: "mat4"
+        }
+      };
+    }
+    _createShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+      if (success) {
+        return shader;
+      }
+      console.log(gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+    }
+    _createProgram(gl, vertexShader, fragmentShader) {
+      const program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      const success = gl.getProgramParameter(program, gl.LINK_STATUS);
+      if (success) {
+        return program;
+      }
+      console.log(gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+    }
+    setUniform(name, value, type) {
+      this.uniforms[name] = {
+        name,
+        value,
+        type
+      };
+    }
+  };
+
+  // src/js/modules/Sandbox.js
+  var Sandbox = class {
+    static createColor(r, g, b) {
+      return {
+        r: r / 255,
+        g: g / 255,
+        b: b / 255
+      };
+    }
+  };
+  Sandbox.Renderer = Renderer;
+  Sandbox.Orthographic = Orthographic;
+  Sandbox.Perspective = Perspective;
+  Sandbox.Volume = Volume;
+  Sandbox.Mesh = Mesh;
+  Sandbox.Geometry = Geometry;
+  Sandbox.Plane = Plane;
+  Sandbox.Circle = Circle;
+  Sandbox.Cube = Cube;
+  Sandbox.Program = Program;
+
+  // src/js/main.js
+  var aspectRatio = window.innerWidth / window.innerHeight;
+  var canvas = document.getElementById("webgl");
+  var renderer = new Sandbox.Renderer(canvas);
+  renderer.setPixelRatio(1);
+  var cube = new Sandbox.Cube(0.5, 0.5, 0.5, 1, 1, 1);
+  cube.setAttribute("aColor", new Float32Array([
+    1,
+    1,
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    1
+  ]), 3);
+  var cubeShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  cubeShader.setUniform("uTime", 0, "1f");
+  cubeShader.setUniform("uRed", 1, "1f");
+  cubeShader.setUniform("uGreen", 0.25, "1f");
+  cubeShader.setUniform("uBlue", 0.5, "1f");
+  var volume = new Sandbox.Volume();
+  for (let i = 0; i < 100; i++) {
+    const cubeInstance = new Sandbox.Mesh(cube, cubeShader);
+    cubeInstance.setPosition(Math.random() * 6 - 3, Math.random() * 2 - 1, -(Math.random() * 100));
+    let rand = Math.random();
+    if (rand > 0.5) {
+      rand = 1;
+    } else {
+      rand = -1;
+    }
+    cubeInstance.rand = rand;
+    cubeInstance.factor = Math.random() * 0.5;
+    volume.add(cubeInstance);
+  }
+  var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
+  renderer.resize();
+  renderer.gl.clearColor(0, 0, 0, 0);
+  var time = 0;
+  var draw = () => {
+    renderer.render(volume, camera);
+    time += 0.1;
+    for (const object in volume.objects) {
+      volume.objects[object].position.x += Math.cos(time / 8) * 5e-3;
+      volume.objects[object].position.y += Math.sin(time / 8) * 5e-3;
+      volume.objects[object].position.z += 0.075;
+      volume.objects[object].rotation.x += volume.objects[object].factor * volume.objects[object].rand;
+      volume.objects[object].rotation.z += volume.objects[object].factor * volume.objects[object].rand;
+    }
+    window.requestAnimationFrame(draw);
+  };
+  window.addEventListener("resize", () => {
+    if (renderer.resize()) {
+      aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height;
+      camera.setAspectRatio(aspectRatio);
+    }
+  });
+  window.requestAnimationFrame(draw);
+  var controls = document.querySelector(".controls");
+  var xPos = document.getElementById("xPos");
+  var yPos = document.getElementById("yPos");
+  var zPos = document.getElementById("zPos");
+  var mouse = {
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 0
+  };
+  zPos.addEventListener("input", (event) => {
+    cubeMesh.position.z = event.target.value;
+  });
+  xPos.addEventListener("input", (event) => {
+    cubeMesh.position.x = event.target.value;
+  });
+  yPos.addEventListener("input", (event) => {
+    cubeMesh.position.y = event.target.value;
+  });
+  controls.addEventListener("mousedown", (event) => {
+    if (event.target.classList.contains("controls")) {
+      event.preventDefault();
+      mouse.x1 = event.clientX;
+      mouse.y1 = event.clientY;
+      document.onmouseup = removeDrag;
+      document.onmousemove = dragControls;
+    }
+  });
+  var dragControls = (event) => {
+    event.preventDefault();
+    mouse.x2 = mouse.x1 - event.clientX;
+    mouse.y2 = mouse.y1 - event.clientY;
+    mouse.x1 = event.clientX;
+    mouse.y1 = event.clientY;
+    controls.style.top = `${controls.offsetTop - mouse.y2}px`;
+    controls.style.bottom = `auto`;
+    controls.style.left = `${controls.offsetLeft - mouse.x2}px`;
+  };
+  var removeDrag = () => {
+    document.onmouseup = null;
+    document.onmousemove = null;
+  };
+})();

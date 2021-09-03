@@ -62,6 +62,7 @@ export default class Mesh {
 	}
 
 	setProjectionMatrix(matrix) {
+		this._recalculateModelMatrix()
 		this.projectionMatrix = Matrix.multiply(matrix, this.localMatrix)
 	}
 
