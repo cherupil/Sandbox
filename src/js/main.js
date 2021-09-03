@@ -97,11 +97,12 @@ let time = 0
 const draw = () => {
 	renderer.render(volume, camera)
 	time += 0.1
+	camera.setPosition(Math.cos(time/10) * 50, 0, -50 + Math.sin(time/10) * 50)
+	camera.setRotationY((Math.atan2(Math.cos(time/10), Math.sin(time/10)) * 180 / Math.PI))
+	console.log(camera.rotation.y)
 	//cubeMesh.shader.uniforms.uTime.value = time
 	for (const object in volume.objects) {
-		volume.objects[object].position.x += Math.cos(time/8) * 0.005
-		volume.objects[object].position.y += Math.sin(time/8) * 0.005
-		volume.objects[object].position.z += 0.075
+		//volume.objects[object].position.z += 0.075
 		volume.objects[object].rotation.x += volume.objects[object].factor * volume.objects[object].rand
 		volume.objects[object].rotation.z += volume.objects[object].factor * volume.objects[object].rand
 

@@ -37,7 +37,7 @@
       let lastShader = null;
       let lastBuffer = null;
       for (const object of volume2.objects) {
-        object.setProjectionMatrix(camera2.matrix);
+        object.setProjectionMatrix(camera2.viewProjectionMatrix);
         let bindBuffers = false;
         if (object.shader.program !== lastShader) {
           this.gl.useProgram(object.shader.program);
@@ -147,74 +147,6 @@
     }
   };
 
-  // src/js/modules/Perspective.js
-  var Perspective = class {
-    constructor(fieldOfView, aspectRatio2, near, far) {
-      this.fieldOfView = fieldOfView * Math.PI / 180;
-      this.aspectRatio = aspectRatio2;
-      this.near = near;
-      this.far = far;
-      this._createMatrix();
-    }
-    _createMatrix() {
-      this.top = this.near * Math.tan(this.fieldOfView / 2);
-      this.bottom = -this.top;
-      this.right = this.top * this.aspectRatio;
-      this.left = -this.right;
-      this.matrix = [
-        2 * this.near / (this.right - this.left),
-        0,
-        0,
-        0,
-        0,
-        2 * this.near / (this.top - this.bottom),
-        0,
-        0,
-        0,
-        0,
-        -(this.far + this.near) / (this.far - this.near),
-        -1,
-        -this.near * (this.right + this.left) / (this.right - this.left),
-        -this.near * (this.top + this.bottom) / (this.top - this.bottom),
-        2 * this.far * this.near / (this.near - this.far),
-        0
-      ];
-    }
-    setFieldOfView(fieldOfView) {
-      this.fieldOfView = fieldOfView * Math.PI / 180;
-      this._createMatrix();
-    }
-    setAspectRatio(aspectRatio2) {
-      this.aspectRatio = aspectRatio2;
-      this._createMatrix();
-    }
-    setNear(near) {
-      this.near = near;
-      this._createMatrix();
-    }
-    setFar(far) {
-      this.far = far;
-      this._createMatrix();
-    }
-  };
-
-  // src/js/modules/Volume.js
-  var Volume = class {
-    constructor() {
-      this.objects = [];
-    }
-    add(object) {
-      this.objects.push(object);
-      this.objects.sort((a, b) => {
-        const bufferDiff = a.geometry.id - b.geometry.id;
-        if (bufferDiff) {
-          return bufferDiff;
-        }
-        return a.shader.id - b.shader.id;
-      });
-    }
-  };
-
   // src/js/modules/Matrix.js
   var Matrix = class {
     static multiply(a, b) {
@@ -288,6 +220,71 @@
         0,
         1
       ];
+    }
+    static inverse(m) {
+      const result = new Float32Array(16);
+      const m00 = m[0 * 4 + 0];
+      const m01 = m[0 * 4 + 1];
+      const m02 = m[0 * 4 + 2];
+      const m03 = m[0 * 4 + 3];
+      const m10 = m[1 * 4 + 0];
+      const m11 = m[1 * 4 + 1];
+      const m12 = m[1 * 4 + 2];
+      const m13 = m[1 * 4 + 3];
+      const m20 = m[2 * 4 + 0];
+      const m21 = m[2 * 4 + 1];
+      const m22 = m[2 * 4 + 2];
+      const m23 = m[2 * 4 + 3];
+      const m30 = m[3 * 4 + 0];
+      const m31 = m[3 * 4 + 1];
+      const m32 = m[3 * 4 + 2];
+      const m33 = m[3 * 4 + 3];
+      const tmp_0 = m22 * m33;
+      const tmp_1 = m32 * m23;
+      const tmp_2 = m12 * m33;
+      const tmp_3 = m32 * m13;
+      const tmp_4 = m12 * m23;
+      const tmp_5 = m22 * m13;
+      const tmp_6 = m02 * m33;
+      const tmp_7 = m32 * m03;
+      const tmp_8 = m02 * m23;
+      const tmp_9 = m22 * m03;
+      const tmp_10 = m02 * m13;
+      const tmp_11 = m12 * m03;
+      const tmp_12 = m20 * m31;
+      const tmp_13 = m30 * m21;
+      const tmp_14 = m10 * m31;
+      const tmp_15 = m30 * m11;
+      const tmp_16 = m10 * m21;
+      const tmp_17 = m20 * m11;
+      const tmp_18 = m00 * m31;
+      const tmp_19 = m30 * m01;
+      const tmp_20 = m00 * m21;
+      const tmp_21 = m20 * m01;
+      const tmp_22 = m00 * m11;
+      const tmp_23 = m10 * m01;
+      const t0 = tmp_0 * m11 + tmp_3 * m21 + tmp_4 * m31 - (tmp_1 * m11 + tmp_2 * m21 + tmp_5 * m31);
+      const t1 = tmp_1 * m01 + tmp_6 * m21 + tmp_9 * m31 - (tmp_0 * m01 + tmp_7 * m21 + tmp_8 * m31);
+      const t2 = tmp_2 * m01 + tmp_7 * m11 + tmp_10 * m31 - (tmp_3 * m01 + tmp_6 * m11 + tmp_11 * m31);
+      const t3 = tmp_5 * m01 + tmp_8 * m11 + tmp_11 * m21 - (tmp_4 * m01 + tmp_9 * m11 + tmp_10 * m21);
+      const d = 1 / (m00 * t0 + m10 * t1 + m20 * t2 + m30 * t3);
+      result[0] = d * t0;
+      result[1] = d * t1;
+      result[2] = d * t2;
+      result[3] = d * t3;
+      result[4] = d * (tmp_1 * m10 + tmp_2 * m20 + tmp_5 * m30 - (tmp_0 * m10 + tmp_3 * m20 + tmp_4 * m30));
+      result[5] = d * (tmp_0 * m00 + tmp_7 * m20 + tmp_8 * m30 - (tmp_1 * m00 + tmp_6 * m20 + tmp_9 * m30));
+      result[6] = d * (tmp_3 * m00 + tmp_6 * m10 + tmp_11 * m30 - (tmp_2 * m00 + tmp_7 * m10 + tmp_10 * m30));
+      result[7] = d * (tmp_4 * m00 + tmp_9 * m10 + tmp_10 * m20 - (tmp_5 * m00 + tmp_8 * m10 + tmp_11 * m20));
+      result[8] = d * (tmp_12 * m13 + tmp_15 * m23 + tmp_16 * m33 - (tmp_13 * m13 + tmp_14 * m23 + tmp_17 * m33));
+      result[9] = d * (tmp_13 * m03 + tmp_18 * m23 + tmp_21 * m33 - (tmp_12 * m03 + tmp_19 * m23 + tmp_20 * m33));
+      result[10] = d * (tmp_14 * m03 + tmp_19 * m13 + tmp_22 * m33 - (tmp_15 * m03 + tmp_18 * m13 + tmp_23 * m33));
+      result[11] = d * (tmp_17 * m03 + tmp_20 * m13 + tmp_23 * m23 - (tmp_16 * m03 + tmp_21 * m13 + tmp_22 * m23));
+      result[12] = d * (tmp_14 * m22 + tmp_17 * m32 + tmp_13 * m12 - (tmp_16 * m32 + tmp_12 * m12 + tmp_15 * m22));
+      result[13] = d * (tmp_20 * m32 + tmp_12 * m02 + tmp_19 * m22 - (tmp_18 * m22 + tmp_21 * m32 + tmp_13 * m02));
+      result[14] = d * (tmp_18 * m12 + tmp_23 * m32 + tmp_15 * m02 - (tmp_22 * m32 + tmp_14 * m02 + tmp_19 * m12));
+      result[15] = d * (tmp_22 * m22 + tmp_16 * m02 + tmp_21 * m12 - (tmp_20 * m12 + tmp_23 * m22 + tmp_17 * m02));
+      return result;
     }
     static translate(tx, ty, tz) {
       return [
@@ -397,6 +394,125 @@
         0,
         1
       ];
+    }
+  };
+
+  // src/js/modules/Perspective.js
+  var Perspective = class {
+    constructor(fieldOfView, aspectRatio2, near, far) {
+      this.fieldOfView = fieldOfView * Math.PI / 180;
+      this.aspectRatio = aspectRatio2;
+      this.near = near;
+      this.far = far;
+      this.position = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      this.rotation = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      this.viewMatrix = Matrix.identity();
+      this._createMatrix();
+      this._setViewProjectionMatrix();
+    }
+    _createMatrix() {
+      this.top = this.near * Math.tan(this.fieldOfView / 2);
+      this.bottom = -this.top;
+      this.right = this.top * this.aspectRatio;
+      this.left = -this.right;
+      this.matrix = [
+        2 * this.near / (this.right - this.left),
+        0,
+        0,
+        0,
+        0,
+        2 * this.near / (this.top - this.bottom),
+        0,
+        0,
+        0,
+        0,
+        -(this.far + this.near) / (this.far - this.near),
+        -1,
+        -this.near * (this.right + this.left) / (this.right - this.left),
+        -this.near * (this.top + this.bottom) / (this.top - this.bottom),
+        2 * this.far * this.near / (this.near - this.far),
+        0
+      ];
+    }
+    _recalculateViewMatrix() {
+      const identity = Matrix.identity();
+      const translation = Matrix.translate(this.position.x, this.position.y, this.position.z);
+      const rotationX = Matrix.rotateX(this.rotation.x);
+      const rotationY = Matrix.rotateY(this.rotation.y);
+      const rotationZ = Matrix.rotateZ(this.rotation.z);
+      let matrix = Matrix.multiply(identity, translation);
+      matrix = Matrix.multiply(matrix, rotationX);
+      matrix = Matrix.multiply(matrix, rotationY);
+      matrix = Matrix.multiply(matrix, rotationZ);
+      this.viewMatrix = Matrix.inverse(matrix);
+    }
+    _setViewProjectionMatrix() {
+      this.viewProjectionMatrix = Matrix.multiply(this.matrix, this.viewMatrix);
+    }
+    setFieldOfView(fieldOfView) {
+      this.fieldOfView = fieldOfView * Math.PI / 180;
+      this._createMatrix();
+      this._setViewProjectionMatrix();
+    }
+    setAspectRatio(aspectRatio2) {
+      this.aspectRatio = aspectRatio2;
+      this._createMatrix();
+      this._setViewProjectionMatrix();
+    }
+    setNear(near) {
+      this.near = near;
+      this._createMatrix();
+      this._setViewProjectionMatrix();
+    }
+    setFar(far) {
+      this.far = far;
+      this._createMatrix();
+      this._setViewProjectionMatrix();
+    }
+    setPosition(x, y, z) {
+      this.position = { x, y, z };
+      this._recalculateViewMatrix();
+      this._setViewProjectionMatrix();
+    }
+    setRotationX(angle) {
+      this.rotation.x = angle;
+      this._recalculateViewMatrix();
+      this._setViewProjectionMatrix();
+    }
+    setRotationY(angle) {
+      this.rotation.y = angle;
+      this._recalculateViewMatrix();
+      this._setViewProjectionMatrix();
+    }
+    setRotationZ(angle) {
+      this.rotation.z = angle;
+      this._recalculateViewMatrix();
+      this._setViewProjectionMatrix();
+    }
+  };
+
+  // src/js/modules/Volume.js
+  var Volume = class {
+    constructor() {
+      this.objects = [];
+    }
+    add(object) {
+      this.objects.push(object);
+      this.objects.sort((a, b) => {
+        const bufferDiff = a.geometry.id - b.geometry.id;
+        if (bufferDiff) {
+          return bufferDiff;
+        }
+        return a.shader.id - b.shader.id;
+      });
     }
   };
 
@@ -812,10 +928,10 @@
   var draw = () => {
     renderer.render(volume, camera);
     time += 0.1;
+    camera.setPosition(Math.cos(time / 10) * 50, 0, -50 + Math.sin(time / 10) * 50);
+    camera.setRotationY(Math.atan2(Math.cos(time / 10), Math.sin(time / 10)) * 180 / Math.PI);
+    console.log(camera.rotation.y);
     for (const object in volume.objects) {
-      volume.objects[object].position.x += Math.cos(time / 8) * 5e-3;
-      volume.objects[object].position.y += Math.sin(time / 8) * 5e-3;
-      volume.objects[object].position.z += 0.075;
       volume.objects[object].rotation.x += volume.objects[object].factor * volume.objects[object].rand;
       volume.objects[object].rotation.z += volume.objects[object].factor * volume.objects[object].rand;
     }
