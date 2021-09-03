@@ -86,7 +86,8 @@ for (let i = 0; i < 100; i++) {
 }
 
 //Set Viewport
-const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
+const camera1 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
+const camera2 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
 renderer.resize()
 
 //Clear canvas
@@ -94,12 +95,16 @@ renderer.gl.clearColor(0, 0, 0, 0)
 
 let time = 0
 
+let currentCamera = camera1
+
 const draw = () => {
-	renderer.render(volume, camera)
+
+	renderer.render(volume, currentCamera)
 	time += 0.1
-	camera.setPosition(Math.cos(time/10) * 50, 0, -50 + Math.sin(time/10) * 50)
-	camera.setRotationY((Math.atan2(Math.cos(time/10), Math.sin(time/10)) * 180 / Math.PI))
-	console.log(camera.rotation.y)
+	camera1.setPosition(Math.cos(time/10) * 50, 0, -50 + Math.sin(time/10) * 50)
+	camera1.setRotationY((Math.atan2(Math.cos(time/10), Math.sin(time/10)) * 180 / Math.PI))
+	camera2.setPosition(0, 0, -time/2)
+	camera2.setRotationZ(time)
 	//cubeMesh.shader.uniforms.uTime.value = time
 	for (const object in volume.objects) {
 		//volume.objects[object].position.z += 0.075
@@ -115,15 +120,15 @@ const draw = () => {
 window.addEventListener('resize', () => {
 	if (renderer.resize()) {
 		aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height
-		camera.setAspectRatio(aspectRatio)
+		camera1.setAspectRatio(aspectRatio)
+		camera2.setAspectRatio(aspectRatio)
 	}
 })
 window.requestAnimationFrame(draw)
 
 const controls = document.querySelector('.controls')
-const xPos = document.getElementById('xPos')
-const yPos = document.getElementById('yPos')
-const zPos = document.getElementById('zPos')
+const camera1Button = document.getElementById('camera1')
+const camera2Button = document.getElementById('camera2')
 
 const mouse = {
 	x1: 0,
@@ -132,16 +137,18 @@ const mouse = {
 	y2: 0
 }
 
-zPos.addEventListener('input', event => {
-	cubeMesh.position.z = event.target.value
+camera1Button.addEventListener('click', event => {
+	//time = 0
+	camera1Button.classList.add('active')
+	camera2Button.classList.remove('active')
+	currentCamera = camera1
 })
 
-xPos.addEventListener('input', event => {
-	cubeMesh.position.x = event.target.value
-})
-
-yPos.addEventListener('input', event => {
-	cubeMesh.position.y = event.target.value
+camera2Button.addEventListener('click', event => {
+	//time = 0
+	camera2Button.classList.add('active')
+	camera1Button.classList.remove('active')
+	currentCamera = camera2
 })
 
 controls.addEventListener('mousedown', event => {
@@ -171,6 +178,7 @@ const removeDrag = () => {
 	document.onmousemove = null
 }
 
-/*window.setTimeout(() => {
+window.setTimeout(() => {
 	controls.classList.add('active')
-}, 500)*/
+	camera1Button.classList.add('active')
+}, 500)

@@ -30,14 +30,14 @@
       }
       return false;
     }
-    render(volume2, camera2) {
+    render(volume2, camera) {
       this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
       this.gl.enable(this.gl.CULL_FACE);
       this.gl.enable(this.gl.DEPTH_TEST);
       let lastShader = null;
       let lastBuffer = null;
       for (const object of volume2.objects) {
-        object.setProjectionMatrix(camera2.viewProjectionMatrix);
+        object.setProjectionMatrix(camera.viewProjectionMatrix);
         let bindBuffers = false;
         if (object.shader.program !== lastShader) {
           this.gl.useProgram(object.shader.program);
@@ -921,16 +921,19 @@
     cubeInstance.factor = Math.random() * 0.5;
     volume.add(cubeInstance);
   }
-  var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
+  var camera1 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
+  var camera2 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
   var time = 0;
+  var currentCamera = camera1;
   var draw = () => {
-    renderer.render(volume, camera);
+    renderer.render(volume, currentCamera);
     time += 0.1;
-    camera.setPosition(Math.cos(time / 10) * 50, 0, -50 + Math.sin(time / 10) * 50);
-    camera.setRotationY(Math.atan2(Math.cos(time / 10), Math.sin(time / 10)) * 180 / Math.PI);
-    console.log(camera.rotation.y);
+    camera1.setPosition(Math.cos(time / 10) * 50, 0, -50 + Math.sin(time / 10) * 50);
+    camera1.setRotationY(Math.atan2(Math.cos(time / 10), Math.sin(time / 10)) * 180 / Math.PI);
+    camera2.setPosition(0, 0, -time / 2);
+    camera2.setRotationZ(time);
     for (const object in volume.objects) {
       volume.objects[object].rotation.x += volume.objects[object].factor * volume.objects[object].rand;
       volume.objects[object].rotation.z += volume.objects[object].factor * volume.objects[object].rand;
@@ -940,28 +943,29 @@
   window.addEventListener("resize", () => {
     if (renderer.resize()) {
       aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height;
-      camera.setAspectRatio(aspectRatio);
+      camera1.setAspectRatio(aspectRatio);
+      camera2.setAspectRatio(aspectRatio);
     }
   });
   window.requestAnimationFrame(draw);
   var controls = document.querySelector(".controls");
-  var xPos = document.getElementById("xPos");
-  var yPos = document.getElementById("yPos");
-  var zPos = document.getElementById("zPos");
+  var camera1Button = document.getElementById("camera1");
+  var camera2Button = document.getElementById("camera2");
   var mouse = {
     x1: 0,
     y1: 0,
     x2: 0,
     y2: 0
   };
-  zPos.addEventListener("input", (event) => {
-    cubeMesh.position.z = event.target.value;
+  camera1Button.addEventListener("click", (event) => {
+    camera1Button.classList.add("active");
+    camera2Button.classList.remove("active");
+    currentCamera = camera1;
   });
-  xPos.addEventListener("input", (event) => {
-    cubeMesh.position.x = event.target.value;
-  });
-  yPos.addEventListener("input", (event) => {
-    cubeMesh.position.y = event.target.value;
+  camera2Button.addEventListener("click", (event) => {
+    camera2Button.classList.add("active");
+    camera1Button.classList.remove("active");
+    currentCamera = camera2;
   });
   controls.addEventListener("mousedown", (event) => {
     if (event.target.classList.contains("controls")) {
@@ -986,4 +990,8 @@
     document.onmouseup = null;
     document.onmousemove = null;
   };
+  window.setTimeout(() => {
+    controls.classList.add("active");
+    camera1Button.classList.add("active");
+  }, 500);
 })();
