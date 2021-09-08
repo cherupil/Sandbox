@@ -7,6 +7,7 @@ import Geometry from './Geometry.js'
 import Plane from './Plane.js'
 import Circle from './Circle.js'
 import Cube from './Cube.js'
+import Sphere from './Sphere.js'
 import Program from './Program.js'
 
 export default class Sandbox {
@@ -28,5 +29,6 @@ Sandbox.Geometry = Geometry
 Sandbox.Plane = Plane
 Sandbox.Circle = Circle
 Sandbox.Cube = Cube
+Sandbox.Sphere = Sphere
 Sandbox.Program = Program
 

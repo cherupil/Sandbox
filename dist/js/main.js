@@ -1,9 +1,9 @@
 (() => {
-  // src/shaders/cube/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aColor;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vColor;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	/* position.x += sin(16.0 * position.z + uTime) / 100.0;\n	position.y += sin(16.0 * position.x + uTime) / 100.0;\n	position.z += sin(16.0 * position.y + uTime) / 100.0; */\n	gl_Position = position;\n	vColor = aColor;\n}";
+  // src/shaders/sphere/vertex.glsl
+  var vertex_default = "attribute vec4 aPosition;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n}";
 
-  // src/shaders/cube/fragment.glsl
-  var fragment_default = "precision mediump float;\n\nuniform float uRed;\nuniform float uGreen;\nuniform float uBlue;\n\nvarying vec3 vColor;\n\nvoid main() {\n	gl_FragColor = vec4(vColor, 1.0);\n}";
+  // src/shaders/sphere/fragment.glsl
+  var fragment_default = "precision mediump float;\n\nvoid main() {\n	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -30,14 +30,15 @@
       }
       return false;
     }
-    render(volume2, camera) {
+    render(volume2, camera2) {
       this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
       this.gl.enable(this.gl.CULL_FACE);
       this.gl.enable(this.gl.DEPTH_TEST);
       let lastShader = null;
       let lastBuffer = null;
       for (const object of volume2.objects) {
-        object.setProjectionMatrix(camera.viewProjectionMatrix);
+        camera2.setViewProjectionMatrix();
+        object.setProjectionMatrix(camera2.viewProjectionMatrix);
         let bindBuffers = false;
         if (object.shader.program !== lastShader) {
           this.gl.useProgram(object.shader.program);
@@ -416,7 +417,6 @@
       };
       this.viewMatrix = Matrix.identity();
       this._createMatrix();
-      this._setViewProjectionMatrix();
     }
     _createMatrix() {
       this.top = this.near * Math.tan(this.fieldOfView / 2);
@@ -454,48 +454,45 @@
       matrix = Matrix.multiply(matrix, rotationZ);
       this.viewMatrix = Matrix.inverse(matrix);
     }
-    _setViewProjectionMatrix() {
+    setViewProjectionMatrix() {
+      this._recalculateViewMatrix();
       this.viewProjectionMatrix = Matrix.multiply(this.matrix, this.viewMatrix);
     }
     setFieldOfView(fieldOfView) {
       this.fieldOfView = fieldOfView * Math.PI / 180;
       this._createMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
     setAspectRatio(aspectRatio2) {
       this.aspectRatio = aspectRatio2;
       this._createMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
     setNear(near) {
       this.near = near;
       this._createMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
     setFar(far) {
       this.far = far;
       this._createMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
     setPosition(x, y, z) {
       this.position = { x, y, z };
-      this._recalculateViewMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
     setRotationX(angle) {
       this.rotation.x = angle;
-      this._recalculateViewMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
     setRotationY(angle) {
       this.rotation.y = angle;
-      this._recalculateViewMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
     setRotationZ(angle) {
       this.rotation.z = angle;
-      this._recalculateViewMatrix();
-      this._setViewProjectionMatrix();
+      this.setViewProjectionMatrix();
     }
   };
 
@@ -716,6 +713,38 @@
     }
   };
 
+  // src/js/modules/Sphere.js
+  var Sphere = class extends Geometry {
+    constructor(radius, segments) {
+      const positions = [];
+      const segmentSize = Math.PI * 2 / segments;
+      for (let i = 0; i <= segments; i++) {
+        for (let j = 0; j <= segments; j++) {
+          const x1 = radius * Math.cos(j * segmentSize) * Math.sin(i * segmentSize);
+          const y1 = radius * Math.cos(i * segmentSize);
+          const z1 = radius * Math.sin(j * segmentSize) * Math.sin(i * segmentSize);
+          const x2 = radius * Math.cos(j * segmentSize) * Math.sin((i + 1) * segmentSize);
+          const y2 = radius * Math.cos((i + 1) * segmentSize);
+          const z2 = radius * Math.sin(j * segmentSize) * Math.sin((i + 1) * segmentSize);
+          const x3 = radius * Math.cos((j + 1) * segmentSize) * Math.sin((i + 1) * segmentSize);
+          const y3 = radius * Math.cos((i + 1) * segmentSize);
+          const z3 = radius * Math.sin((j + 1) * segmentSize) * Math.sin((i + 1) * segmentSize);
+          const x4 = x1;
+          const y4 = y1;
+          const z4 = z1;
+          const x5 = x3;
+          const y5 = y3;
+          const z5 = z3;
+          const x6 = radius * Math.cos((j + 1) * segmentSize) * Math.sin(i * segmentSize);
+          const y6 = radius * Math.cos(i * segmentSize);
+          const z6 = radius * Math.sin((j + 1) * segmentSize) * Math.sin(i * segmentSize);
+          positions.push(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5, x6, y6, z6);
+        }
+      }
+      super(positions);
+    }
+  };
+
   // src/js/modules/Program.js
   var programId = 0;
   var Program = class {
@@ -784,6 +813,7 @@
   Sandbox.Plane = Plane;
   Sandbox.Circle = Circle;
   Sandbox.Cube = Cube;
+  Sandbox.Sphere = Sphere;
   Sandbox.Program = Program;
 
   // src/js/main.js
@@ -791,181 +821,46 @@
   var canvas = document.getElementById("webgl");
   var renderer = new Sandbox.Renderer(canvas);
   renderer.setPixelRatio(1);
-  var cube = new Sandbox.Cube(0.5, 0.5, 0.5, 1, 1, 1);
-  cube.setAttribute("aColor", new Float32Array([
-    1,
-    1,
-    1,
-    0,
-    1,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1,
-    0,
-    1,
-    0,
-    1,
-    0,
-    0,
-    0,
-    1,
-    1,
-    1,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0,
-    1,
-    1,
-    1,
-    0,
-    1,
-    1,
-    1,
-    1,
-    0,
-    1,
-    0,
-    0,
-    1,
-    1,
-    1,
-    0,
-    0,
-    0,
-    1,
-    1,
-    0,
-    0,
-    1,
-    1,
-    0,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0,
-    1,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0,
-    0,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    1,
-    1,
-    0,
-    0,
-    1
-  ]), 3);
-  var cubeShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
-  cubeShader.setUniform("uTime", 0, "1f");
-  cubeShader.setUniform("uRed", 1, "1f");
-  cubeShader.setUniform("uGreen", 0.25, "1f");
-  cubeShader.setUniform("uBlue", 0.5, "1f");
   var volume = new Sandbox.Volume();
-  for (let i = 0; i < 100; i++) {
-    const cubeInstance = new Sandbox.Mesh(cube, cubeShader);
-    cubeInstance.setPosition(Math.random() * 6 - 3, Math.random() * 2 - 1, -(Math.random() * 100));
-    let rand = Math.random();
-    if (rand > 0.5) {
-      rand = 1;
-    } else {
-      rand = -1;
-    }
-    cubeInstance.rand = rand;
-    cubeInstance.factor = Math.random() * 0.5;
-    volume.add(cubeInstance);
-  }
-  var camera1 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
-  var camera2 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
+  var sphere = new Sandbox.Sphere(1, 64);
+  sphere.type = "LINE_LOOP";
+  var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  sphereShader.setUniform("uTime", 0, "1f");
+  var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
+  volume.add(sphereMesh);
+  var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
+  camera.position.z = 3;
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
   var time = 0;
-  var currentCamera = camera1;
   var draw = () => {
-    renderer.render(volume, currentCamera);
+    renderer.render(volume, camera);
     time += 0.1;
-    camera1.setPosition(Math.cos(time / 10) * 50, 0, -50 + Math.sin(time / 10) * 50);
-    camera1.setRotationY(Math.atan2(Math.cos(time / 10), Math.sin(time / 10)) * 180 / Math.PI);
-    camera2.setPosition(0, 0, -time / 2);
-    camera2.setRotationZ(time);
-    for (const object in volume.objects) {
-      volume.objects[object].rotation.x += volume.objects[object].factor * volume.objects[object].rand;
-      volume.objects[object].rotation.z += volume.objects[object].factor * volume.objects[object].rand;
-    }
+    sphereMesh.setRotationY(time * 10);
+    sphereMesh.shader.uniforms.uTime.value = time;
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
     if (renderer.resize()) {
       aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height;
-      camera1.setAspectRatio(aspectRatio);
-      camera2.setAspectRatio(aspectRatio);
+      camera.setAspectRatio(aspectRatio);
     }
   });
   window.requestAnimationFrame(draw);
   var controls = document.querySelector(".controls");
-  var camera1Button = document.getElementById("camera1");
-  var camera2Button = document.getElementById("camera2");
+  var cameraX = document.getElementById("cameraX");
+  var cameraY = document.getElementById("cameraY");
   var mouse = {
     x1: 0,
     y1: 0,
     x2: 0,
     y2: 0
   };
-  camera1Button.addEventListener("click", (event) => {
-    camera1Button.classList.add("active");
-    camera2Button.classList.remove("active");
-    currentCamera = camera1;
+  cameraX.addEventListener("input", (event) => {
+    camera.position.x = event.target.value;
   });
-  camera2Button.addEventListener("click", (event) => {
-    camera2Button.classList.add("active");
-    camera1Button.classList.remove("active");
-    currentCamera = camera2;
+  cameraY.addEventListener("input", (event) => {
+    camera.position.y = event.target.value;
   });
   controls.addEventListener("mousedown", (event) => {
     if (event.target.classList.contains("controls")) {
@@ -992,6 +887,5 @@
   };
   window.setTimeout(() => {
     controls.classList.add("active");
-    camera1Button.classList.add("active");
   }, 500);
 })();

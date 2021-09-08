@@ -1,5 +1,5 @@
-import cubeShaderVertex from '../shaders/cube/vertex.glsl'
-import cubeShaderFragment from '../shaders/cube/fragment.glsl'
+import sphereShaderVertex from '../shaders/sphere/vertex.glsl'
+import sphereShaderFragment from '../shaders/sphere/fragment.glsl'
 
 import Sandbox from './modules/Sandbox.js'
 
@@ -8,86 +8,19 @@ const canvas = document.getElementById('webgl')
 const renderer = new Sandbox.Renderer(canvas)
 renderer.setPixelRatio(1)
 
-//Cube
-const cube = new Sandbox.Cube(0.5, 0.5, 0.5, 1, 1, 1)
-cube.setAttribute('aColor', new Float32Array([
-	//Front
-	1.0, 1.0, 1.0,
-	0.0, 1.0, 0.0,
-	0.0, 0.0, 1.0,
-	0.0, 0.0, 1.0,
-	0.0, 1.0, 0.0,
-	1.0, 0.0, 0.0,
-
-	//Back
-	0.0, 1.0, 1.0,
-	1.0, 0.0, 1.0,
-	1.0, 1.0, 1.0,
-	1.0, 0.0, 1.0,
-	1.0, 1.0, 0.0,
-	1.0, 1.0, 1.0,
-
-	//Top
-	1.0, 0.0, 1.0,
-	0.0, 0.0, 1.0,
-	1.0, 1.0, 0.0,
-	0.0, 0.0, 1.0,
-	1.0, 0.0, 0.0,
-	1.0, 1.0, 0.0,
-
-	//Bottom
-	0.0, 1.0, 1.0,
-	1.0, 1.0, 1.0,
-	1.0, 1.0, 1.0,
-	1.0, 1.0, 1.0,
-	1.0, 1.0, 1.0,
-	0.0, 1.0, 0.0,
-
-	//Right
-	1.0, 1.0, 1.0,
-	1.0, 1.0, 0.0,
-	0.0, 1.0, 0.0,
-	1.0, 1.0, 0.0,
-	1.0, 0.0, 0.0,
-	0.0, 1.0, 0.0,
-
-	//Left
-	0.0, 1.0, 1.0,
-	1.0, 1.0, 1.0,
-	1.0, 0.0, 1.0,
-	1.0, 0.0, 1.0,
-	1.0, 1.0, 1.0,
-	0.0, 0.0, 1.0
-]), 3)
-const cubeShader = new Sandbox.Program(renderer.gl, cubeShaderVertex, cubeShaderFragment)
-cubeShader.setUniform('uTime', 0, '1f')
-cubeShader.setUniform('uRed', 1, '1f')
-cubeShader.setUniform('uGreen', .25, '1f')
-cubeShader.setUniform('uBlue', .5, '1f')
-
 const volume = new Sandbox.Volume()
 
-for (let i = 0; i < 100; i++) {
-	const cubeInstance = new Sandbox.Mesh(cube, cubeShader)
-	cubeInstance.setPosition(
-		(Math.random() * 6) - 3,
-		(Math.random() * 2) - 1,
-		-(Math.random() * 100),
-	)
-	let rand = Math.random()
-	if (rand > 0.5) {
-		rand = 1
-	} else {
-		rand = -1
-	}
-	cubeInstance.rand = rand
-	cubeInstance.factor = Math.random() * 0.5
-	volume.add(cubeInstance)
-}
+//Cube
+const sphere = new Sandbox.Sphere(1, 64)
+sphere.type = 'LINE_LOOP'
+const sphereShader = new Sandbox.Program(renderer.gl, sphereShaderVertex, sphereShaderFragment)
+sphereShader.setUniform('uTime', 0, '1f')
+const sphereMesh = new Sandbox.Mesh(sphere, sphereShader)
+volume.add(sphereMesh)
 
 //Set Viewport
-const camera1 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
-const camera2 = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
+const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
+camera.position.z = 3
 renderer.resize()
 
 //Clear canvas
@@ -95,40 +28,25 @@ renderer.gl.clearColor(0, 0, 0, 0)
 
 let time = 0
 
-let currentCamera = camera1
-
 const draw = () => {
-
-	renderer.render(volume, currentCamera)
+	renderer.render(volume, camera)
 	time += 0.1
-	camera1.setPosition(Math.cos(time/10) * 50, 0, -50 + Math.sin(time/10) * 50)
-	camera1.setRotationY((Math.atan2(Math.cos(time/10), Math.sin(time/10)) * 180 / Math.PI))
-	camera2.setPosition(0, 0, -time/2)
-	camera2.setRotationZ(time)
-	//cubeMesh.shader.uniforms.uTime.value = time
-	for (const object in volume.objects) {
-		//volume.objects[object].position.z += 0.075
-		volume.objects[object].rotation.x += volume.objects[object].factor * volume.objects[object].rand
-		volume.objects[object].rotation.z += volume.objects[object].factor * volume.objects[object].rand
-
-	}
-	//cubeMesh.setRotationX(time * 3)
-	//cubeMesh.setRotationY(time * 4.5)
+	sphereMesh.setRotationY(time * 10)
+	sphereMesh.shader.uniforms.uTime.value = time
 	window.requestAnimationFrame(draw)
 }
 
 window.addEventListener('resize', () => {
 	if (renderer.resize()) {
 		aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height
-		camera1.setAspectRatio(aspectRatio)
-		camera2.setAspectRatio(aspectRatio)
+		camera.setAspectRatio(aspectRatio)
 	}
 })
 window.requestAnimationFrame(draw)
 
 const controls = document.querySelector('.controls')
-const camera1Button = document.getElementById('camera1')
-const camera2Button = document.getElementById('camera2')
+const cameraX = document.getElementById('cameraX')
+const cameraY = document.getElementById('cameraY')
 
 const mouse = {
 	x1: 0,
@@ -137,18 +55,12 @@ const mouse = {
 	y2: 0
 }
 
-camera1Button.addEventListener('click', event => {
-	//time = 0
-	camera1Button.classList.add('active')
-	camera2Button.classList.remove('active')
-	currentCamera = camera1
+cameraX.addEventListener('input', event => {
+	camera.position.x = event.target.value
 })
 
-camera2Button.addEventListener('click', event => {
-	//time = 0
-	camera2Button.classList.add('active')
-	camera1Button.classList.remove('active')
-	currentCamera = camera2
+cameraY.addEventListener('input', event => {
+	camera.position.y = event.target.value
 })
 
 controls.addEventListener('mousedown', event => {
@@ -180,5 +92,4 @@ const removeDrag = () => {
 
 window.setTimeout(() => {
 	controls.classList.add('active')
-	camera1Button.classList.add('active')
 }, 500)

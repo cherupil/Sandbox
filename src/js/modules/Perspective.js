@@ -18,7 +18,6 @@ export default class Perspective {
 		}
 		this.viewMatrix = Matrix.identity()
 		this._createMatrix()
-		this._setViewProjectionMatrix()
 	}
 
 	_createMatrix() {
@@ -48,55 +47,52 @@ export default class Perspective {
 		this.viewMatrix = Matrix.inverse(matrix)
 	}
 
-	_setViewProjectionMatrix() {
+	setViewProjectionMatrix() {
+		this._recalculateViewMatrix()
 		this.viewProjectionMatrix = Matrix.multiply(this.matrix, this.viewMatrix)
 	}
 
 	setFieldOfView(fieldOfView) {
 		this.fieldOfView = fieldOfView * Math.PI / 180
 		this._createMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 
 	setAspectRatio(aspectRatio) {
 		this.aspectRatio = aspectRatio
 		this._createMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 
 	setNear(near) {
 		this.near = near
 		this._createMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 
 	setFar(far) {
 		this.far = far
 		this._createMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 
 	setPosition(x, y, z) {
 		this.position = { x, y, z }
-		this._recalculateViewMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 
 	setRotationX(angle) {
 		this.rotation.x = angle
-		this._recalculateViewMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 
 	setRotationY(angle) {
 		this.rotation.y = angle
-		this._recalculateViewMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 
 	setRotationZ(angle) {
 		this.rotation.z = angle
-		this._recalculateViewMatrix()
-		this._setViewProjectionMatrix()
+		this.setViewProjectionMatrix()
 	}
 }

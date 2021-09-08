@@ -41,6 +41,7 @@ export default class Renderer {
     	let lastBuffer = null
 
     	for (const object of volume.objects) {    
+    		camera.setViewProjectionMatrix()
     		object.setProjectionMatrix(camera.viewProjectionMatrix)
     		let bindBuffers = false
 

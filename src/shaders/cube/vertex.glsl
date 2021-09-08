@@ -12,5 +12,6 @@ void main() {
 	position.y += sin(16.0 * position.x + uTime) / 100.0;
 	position.z += sin(16.0 * position.y + uTime) / 100.0; */
 	gl_Position = position;
+	gl_PointSize = 2.0;
 	vColor = aColor;
 }
