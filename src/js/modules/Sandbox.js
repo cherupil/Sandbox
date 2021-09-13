@@ -6,6 +6,7 @@ import Mesh from './Mesh.js'
 import Geometry from './Geometry.js'
 import Plane from './Plane.js'
 import Circle from './Circle.js'
+import Tetrahedron from './Tetrahedron.js'
 import Cube from './Cube.js'
 import Sphere from './Sphere.js'
 import Program from './Program.js'
@@ -28,6 +29,7 @@ Sandbox.Mesh = Mesh
 Sandbox.Geometry = Geometry
 Sandbox.Plane = Plane
 Sandbox.Circle = Circle
+Sandbox.Tetrahedron = Tetrahedron
 Sandbox.Cube = Cube
 Sandbox.Sphere = Sphere
 Sandbox.Program = Program

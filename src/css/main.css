@@ -135,12 +135,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
 	border: 2px solid rgba(255, 255, 255, 1);
 }
 
+input[type="range"].active::-webkit-slider-thumb {
+	border: 2px solid rgba(255, 255, 255, 1);
+	box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
 input[type="range"]:active::-webkit-slider-thumb {
 	border: 2px solid rgba(255, 255, 255, 1);
 	box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
 }
 
 input[type="range"]:active::-webkit-slider-runnable-track {
+	background-color: rgba(255, 255, 255, 1);
+	box-shadow: 0 0 4px rgba(255, 255, 255, 1);
+}
+
+input[type="range"].active::-webkit-slider-runnable-track {
 	background-color: rgba(255, 255, 255, 1);
 	box-shadow: 0 0 4px rgba(255, 255, 255, 1);
 }

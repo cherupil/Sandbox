@@ -1,3 +1,5 @@
+import Matrix from './Matrix.js'
+
 export default class Orthographic {
 	constructor(left, right, bottom, top, near, far) {
 		this.left = left
@@ -6,6 +8,17 @@ export default class Orthographic {
 		this.top = top
 		this.near = near
 		this.far = far
+		this.position = {
+			x: 0,
+			y: 0,
+			z: 0
+		}
+		this.rotation = {
+			x: 0,
+			y: 0,
+			z: 0
+		}
+		this.viewMatrix = Matrix.identity()
 		this._createMatrix()
 	}
 
@@ -16,6 +29,24 @@ export default class Orthographic {
 			0, 0, -2 / (this.far - this.near), 0,
 			-(this.right + this.left) / (this.right - this.left), -(this.top + this.bottom) / (this.top - this.bottom), -(this.far + this.near) / (this.far - this.near), 1
 		]
+	}
+
+	_recalculateViewMatrix() {
+		const identity = Matrix.identity()
+		const translation = Matrix.translate(this.position.x, this.position.y, this.position.z)
+		const rotationX = Matrix.rotateX(this.rotation.x)
+		const rotationY = Matrix.rotateY(this.rotation.y)
+		const rotationZ = Matrix.rotateZ(this.rotation.z)
+		let matrix = Matrix.multiply(identity, translation)
+		matrix = Matrix.multiply(matrix, rotationX)
+		matrix = Matrix.multiply(matrix, rotationY)
+		matrix = Matrix.multiply(matrix, rotationZ)
+		this.viewMatrix = Matrix.inverse(matrix)
+	}
+
+	setViewProjectionMatrix() {
+		this._recalculateViewMatrix()
+		this.viewProjectionMatrix = Matrix.multiply(this.matrix, this.viewMatrix)
 	}
 
 	setLeft(left) {
@@ -46,5 +77,25 @@ export default class Orthographic {
 	setFar(far) {
 		this.far = far
 		this._createMatrix()
+	}
+
+	setPosition(x, y, z) {
+		this.position = { x, y, z }
+		this.setViewProjectionMatrix()
+	}
+
+	setRotationX(angle) {
+		this.rotation.x = angle
+		this.setViewProjectionMatrix()
+	}
+
+	setRotationY(angle) {
+		this.rotation.y = angle
+		this.setViewProjectionMatrix()
+	}
+
+	setRotationZ(angle) {
+		this.rotation.z = angle
+		this.setViewProjectionMatrix()
 	}
 }

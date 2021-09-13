@@ -1,9 +1,9 @@
 (() => {
   // src/shaders/sphere/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n}";
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n}";
 
   // src/shaders/sphere/fragment.glsl
-  var fragment_default = "precision mediump float;\n\nvoid main() {\n	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n}";
+  var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\n\nvoid main() {\n	vec3 normals = normalize(vNormal) * 0.5 + 0.5;\n	gl_FragColor = vec4(normals, 1.0);\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -88,63 +88,6 @@
         const count = object.geometry.attributes.aPosition.count;
         this.gl.drawArrays(primitiveType, vertexOffset, count);
       }
-    }
-  };
-
-  // src/js/modules/Orthographic.js
-  var Orthographic = class {
-    constructor(left, right, bottom, top, near, far) {
-      this.left = left;
-      this.right = right;
-      this.bottom = bottom;
-      this.top = top;
-      this.near = near;
-      this.far = far;
-      this._createMatrix();
-    }
-    _createMatrix() {
-      this.matrix = [
-        2 / (this.right - this.left),
-        0,
-        0,
-        0,
-        0,
-        2 / (this.top - this.bottom),
-        0,
-        0,
-        0,
-        0,
-        -2 / (this.far - this.near),
-        0,
-        -(this.right + this.left) / (this.right - this.left),
-        -(this.top + this.bottom) / (this.top - this.bottom),
-        -(this.far + this.near) / (this.far - this.near),
-        1
-      ];
-    }
-    setLeft(left) {
-      this.left = left;
-      this._createMatrix();
-    }
-    setRight(right) {
-      this.right = right;
-      this._createMatrix();
-    }
-    setBottom(bottom) {
-      this.bottom = bottom;
-      this._createMatrix();
-    }
-    setTop(top) {
-      this.top = top;
-      this._createMatrix();
-    }
-    setNear(near) {
-      this.near = near;
-      this._createMatrix();
-    }
-    setFar(far) {
-      this.far = far;
-      this._createMatrix();
     }
   };
 
@@ -398,6 +341,106 @@
     }
   };
 
+  // src/js/modules/Orthographic.js
+  var Orthographic = class {
+    constructor(left, right, bottom, top, near, far) {
+      this.left = left;
+      this.right = right;
+      this.bottom = bottom;
+      this.top = top;
+      this.near = near;
+      this.far = far;
+      this.position = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      this.rotation = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+      this.viewMatrix = Matrix.identity();
+      this._createMatrix();
+    }
+    _createMatrix() {
+      this.matrix = [
+        2 / (this.right - this.left),
+        0,
+        0,
+        0,
+        0,
+        2 / (this.top - this.bottom),
+        0,
+        0,
+        0,
+        0,
+        -2 / (this.far - this.near),
+        0,
+        -(this.right + this.left) / (this.right - this.left),
+        -(this.top + this.bottom) / (this.top - this.bottom),
+        -(this.far + this.near) / (this.far - this.near),
+        1
+      ];
+    }
+    _recalculateViewMatrix() {
+      const identity = Matrix.identity();
+      const translation = Matrix.translate(this.position.x, this.position.y, this.position.z);
+      const rotationX = Matrix.rotateX(this.rotation.x);
+      const rotationY = Matrix.rotateY(this.rotation.y);
+      const rotationZ = Matrix.rotateZ(this.rotation.z);
+      let matrix = Matrix.multiply(identity, translation);
+      matrix = Matrix.multiply(matrix, rotationX);
+      matrix = Matrix.multiply(matrix, rotationY);
+      matrix = Matrix.multiply(matrix, rotationZ);
+      this.viewMatrix = Matrix.inverse(matrix);
+    }
+    setViewProjectionMatrix() {
+      this._recalculateViewMatrix();
+      this.viewProjectionMatrix = Matrix.multiply(this.matrix, this.viewMatrix);
+    }
+    setLeft(left) {
+      this.left = left;
+      this._createMatrix();
+    }
+    setRight(right) {
+      this.right = right;
+      this._createMatrix();
+    }
+    setBottom(bottom) {
+      this.bottom = bottom;
+      this._createMatrix();
+    }
+    setTop(top) {
+      this.top = top;
+      this._createMatrix();
+    }
+    setNear(near) {
+      this.near = near;
+      this._createMatrix();
+    }
+    setFar(far) {
+      this.far = far;
+      this._createMatrix();
+    }
+    setPosition(x, y, z) {
+      this.position = { x, y, z };
+      this.setViewProjectionMatrix();
+    }
+    setRotationX(angle) {
+      this.rotation.x = angle;
+      this.setViewProjectionMatrix();
+    }
+    setRotationY(angle) {
+      this.rotation.y = angle;
+      this.setViewProjectionMatrix();
+    }
+    setRotationZ(angle) {
+      this.rotation.z = angle;
+      this.setViewProjectionMatrix();
+    }
+  };
+
   // src/js/modules/Perspective.js
   var Perspective = class {
     constructor(fieldOfView, aspectRatio2, near, far) {
@@ -603,6 +646,7 @@
       this.id = geometryId++;
       this.attributes = {};
       this.setAttribute("aPosition", new Float32Array(positions), 3);
+      this._generateNormals(positions);
     }
     setAttribute(name, data, size) {
       this.attributes[name] = {
@@ -611,6 +655,17 @@
         size,
         count: data.length / size
       };
+    }
+    _generateNormals(positions) {
+      const normals = [];
+      for (var i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        const z = positions[i + 2];
+        const magnitude = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+        normals.push(x / magnitude, y / magnitude, z / magnitude);
+      }
+      this.setAttribute("aNormal", new Float32Array(normals), 3);
     }
   };
 
@@ -656,6 +711,16 @@
       positions.push(Math.cos(0) * radius, Math.sin(0) * radius, 0);
       super(positions);
       this.type = "TRIANGLE_FAN";
+    }
+  };
+
+  // src/js/modules/Tetrahedron.js
+  var Tetra = class extends Geometry {
+    constructor(size) {
+      const positions = [];
+      const height = Math.sqrt(3) / 2 * size;
+      positions.push(-size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, size * Math.sqrt(3) / 3, 0, size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, -(size * Math.sqrt(3)) / 6, -(size * Math.sqrt(3)) / 3, 0, size * Math.sqrt(3) / 3, 0, 0, -(size * Math.sqrt(3)) / 6, -(size * Math.sqrt(3)) / 3, -size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, size * Math.sqrt(3) / 3, 0, -size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, -(size * Math.sqrt(3)) / 6, -(size * Math.sqrt(3)) / 3, size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6);
+      super(positions);
     }
   };
 
@@ -812,6 +877,7 @@
   Sandbox.Geometry = Geometry;
   Sandbox.Plane = Plane;
   Sandbox.Circle = Circle;
+  Sandbox.Tetrahedron = Tetra;
   Sandbox.Cube = Cube;
   Sandbox.Sphere = Sphere;
   Sandbox.Program = Program;
@@ -822,22 +888,47 @@
   var renderer = new Sandbox.Renderer(canvas);
   renderer.setPixelRatio(1);
   var volume = new Sandbox.Volume();
-  var sphere = new Sandbox.Sphere(1, 64);
-  sphere.type = "LINE_LOOP";
+  var sphere = new Sandbox.Sphere(0.5, 64);
   var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   sphereShader.setUniform("uTime", 0, "1f");
   var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
   volume.add(sphereMesh);
+  sphereMesh.position.x = 2;
+  var cube = new Sandbox.Cube(1, 1, 1, 64, 64, 64);
+  var cubeMesh = new Sandbox.Mesh(cube, sphereShader);
+  volume.add(cubeMesh);
+  cubeMesh.position.x = -2;
+  var tetra = new Sandbox.Tetrahedron(1);
+  var tetraMesh = new Sandbox.Mesh(tetra, sphereShader);
+  volume.add(tetraMesh);
+  tetraMesh.position.y = -(Math.sqrt(3) / 2) / 6;
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 3;
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
   var time = 0;
+  var cameraX = document.getElementById("cameraX");
+  var cameraY = document.getElementById("cameraY");
+  cameraX.addEventListener("input", (event) => {
+    camera.position.x = event.target.value;
+  });
+  cameraY.addEventListener("input", (event) => {
+    camera.position.y = event.target.value;
+  });
   var draw = () => {
     renderer.render(volume, camera);
     time += 0.1;
-    sphereMesh.setRotationY(time * 10);
+    sphereMesh.setRotationX(time * 3);
+    sphereMesh.setRotationY(time * 4);
+    cubeMesh.setRotationX(time * 3);
+    cubeMesh.setRotationY(time * 4);
+    tetraMesh.setRotationX(time * 3);
+    tetraMesh.setRotationY(time * 4);
     sphereMesh.shader.uniforms.uTime.value = time;
+    cameraX.value = Math.cos(time / 4);
+    camera.position.x = Math.cos(time / 4);
+    cameraY.value = Math.sin(time / 4);
+    camera.position.y = Math.sin(time / 4);
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
@@ -848,20 +939,12 @@
   });
   window.requestAnimationFrame(draw);
   var controls = document.querySelector(".controls");
-  var cameraX = document.getElementById("cameraX");
-  var cameraY = document.getElementById("cameraY");
   var mouse = {
     x1: 0,
     y1: 0,
     x2: 0,
     y2: 0
   };
-  cameraX.addEventListener("input", (event) => {
-    camera.position.x = event.target.value;
-  });
-  cameraY.addEventListener("input", (event) => {
-    camera.position.y = event.target.value;
-  });
   controls.addEventListener("mousedown", (event) => {
     if (event.target.classList.contains("controls")) {
       event.preventDefault();
@@ -887,5 +970,7 @@
   };
   window.setTimeout(() => {
     controls.classList.add("active");
+    cameraX.classList.add("active");
+    cameraY.classList.add("active");
   }, 500);
 })();
