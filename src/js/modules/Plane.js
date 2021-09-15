@@ -35,7 +35,7 @@ export default class Plane extends Geometry {
 
 		const uvs = []
 
-		for (var i = 0; i < positions.length; i+=3) {
+		for (let i = 0; i < positions.length; i+=3) {
 			const x = (positions[i] + width/2) / width
 			const y = (positions[i+1] + height/2) / height
 			uvs.push(x, y)

@@ -25,7 +25,7 @@ const cube = new Sandbox.Cube(1, 2, 3, 10, 12, 16)
 //cube.type = 'LINE_LOOP'
 const cubeMesh = new Sandbox.Mesh(cube, sphereShader)
 cubeMesh.setScale(0.5, 0.5, 0.5)
-volume.add(cubeMesh)
+//volume.add(cubeMesh)
 
 //cubeMesh.position.x = -1.5
 
@@ -33,9 +33,9 @@ volume.add(cubeMesh)
 const tetra = new Sandbox.Tetrahedron(1)
 //tetra.type = 'LINE_LOOP'
 const tetraMesh = new Sandbox.Mesh(tetra, sphereShader)
-//volume.add(tetraMesh)
+volume.add(tetraMesh)
 
-tetraMesh.position.x = 1.5
+//tetraMesh.position.x = 1.5
 
 tetraMesh.position.y = -(Math.sqrt(3) / 2) / 6
 
@@ -77,7 +77,7 @@ const draw = () => {
 	//cubeMesh.setRotationX(time * 3)
 	//cubeMesh.setRotationY(-time * 4)
 	//tetraMesh.setRotationX(time * 3)
-	tetraMesh.setRotationY(-time * 4)
+	tetraMesh.setRotationX(-time * 4)
 	//sphereMesh.shader.uniforms.uTime.value = time
 	//cameraX.value = Math.cos(time/4)
 	//camera.position.x = Math.cos(time/4)

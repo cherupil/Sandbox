@@ -99,7 +99,7 @@ export default class Cube extends Geometry {
 						point.x[5], point.y[5], point.z[5]
 					)
 
-					for (var k = 0; k < 6; k++) {
+					for (let k = 0; k < 6; k++) {
 						let uvX
 						let uvY
 						if (uvFlipX) {

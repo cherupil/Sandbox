@@ -675,15 +675,15 @@
       const positions = [];
       const segmentWidth = width / widthSegments;
       const segmentHeight = height / heightSegments;
-      for (let i2 = 0; i2 < heightSegments; i2++) {
+      for (let i = 0; i < heightSegments; i++) {
         for (let j = 0; j < widthSegments; j++) {
           const x1 = j * segmentWidth - width / 2;
-          const y1 = i2 * segmentHeight - height / 2;
+          const y1 = i * segmentHeight - height / 2;
           const z = 0;
           const x2 = (j + 1) * segmentWidth - width / 2;
           const y2 = y1;
           const x3 = x1;
-          const y3 = (i2 + 1) * segmentHeight - height / 2;
+          const y3 = (i + 1) * segmentHeight - height / 2;
           const x4 = x1;
           const y4 = y3;
           const x5 = x2;
@@ -695,7 +695,7 @@
       }
       super(positions);
       const uvs = [];
-      for (var i = 0; i < positions.length; i += 3) {
+      for (let i = 0; i < positions.length; i += 3) {
         const x = (positions[i] + width / 2) / width;
         const y = (positions[i + 1] + height / 2) / height;
         uvs.push(x, y);
@@ -728,6 +728,15 @@
       const height = Math.sqrt(3) / 2 * size;
       positions.push(-size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, size * Math.sqrt(3) / 3, 0, size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, -(size * Math.sqrt(3)) / 6, -(size * Math.sqrt(3)) / 3, 0, size * Math.sqrt(3) / 3, 0, 0, -(size * Math.sqrt(3)) / 6, -(size * Math.sqrt(3)) / 3, -size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, size * Math.sqrt(3) / 3, 0, -size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6, 0, -(size * Math.sqrt(3)) / 6, -(size * Math.sqrt(3)) / 3, size / 2, -(size * Math.sqrt(3)) / 6, size * Math.sqrt(3) / 6);
       super(positions);
+      const uvs = [];
+      for (let i = 0; i < positions.length; i += 9) {
+        if (i === 27) {
+          uvs.push(1, 0, 0.5, 0.5, 0, 0);
+        } else {
+          uvs.push(0, 0, 1, 0, 0.5, 0.5);
+        }
+      }
+      this.setAttribute("aUV", new Float32Array(uvs), 2);
     }
   };
 
@@ -796,7 +805,7 @@
               point[z].push(z1);
             }
             positions.push(point.x[0], point.y[0], point.z[0], point.x[1], point.y[1], point.z[1], point.x[2], point.y[2], point.z[2], point.x[3], point.y[3], point.z[3], point.x[4], point.y[4], point.z[4], point.x[5], point.y[5], point.z[5]);
-            for (var k = 0; k < 6; k++) {
+            for (let k = 0; k < 6; k++) {
               let uvX;
               let uvY;
               if (uvFlipX) {
@@ -934,10 +943,9 @@
   var cube = new Sandbox.Cube(1, 2, 3, 10, 12, 16);
   var cubeMesh = new Sandbox.Mesh(cube, sphereShader);
   cubeMesh.setScale(0.5, 0.5, 0.5);
-  volume.add(cubeMesh);
   var tetra = new Sandbox.Tetrahedron(1);
   var tetraMesh = new Sandbox.Mesh(tetra, sphereShader);
-  tetraMesh.position.x = 1.5;
+  volume.add(tetraMesh);
   tetraMesh.position.y = -(Math.sqrt(3) / 2) / 6;
   console.log(cubeMesh);
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
@@ -956,7 +964,7 @@
   var draw = () => {
     renderer.render(volume, camera);
     time += 0.1;
-    tetraMesh.setRotationY(-time * 4);
+    tetraMesh.setRotationX(-time * 4);
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
