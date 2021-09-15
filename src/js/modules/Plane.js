@@ -32,5 +32,15 @@ export default class Plane extends Geometry {
 			}
 		}
 		super(positions)
+
+		const uvs = []
+
+		for (var i = 0; i < positions.length; i+=3) {
+			const x = (positions[i] + width/2) / width
+			const y = (positions[i+1] + height/2) / height
+			uvs.push(x, y)
+		}
+
+		this.setAttribute('aUV', new Float32Array(uvs), 2)
 	}
 }

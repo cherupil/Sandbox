@@ -1,9 +1,9 @@
 (() => {
   // src/shaders/sphere/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n}";
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
 
   // src/shaders/sphere/fragment.glsl
-  var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\n\nvoid main() {\n	vec3 normals = normalize(vNormal) * 0.5 + 0.5;\n	gl_FragColor = vec4(normals, 1.0);\n}";
+  var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(vUV, 0.0, 1.0);\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -675,15 +675,15 @@
       const positions = [];
       const segmentWidth = width / widthSegments;
       const segmentHeight = height / heightSegments;
-      for (let i = 0; i < heightSegments; i++) {
+      for (let i2 = 0; i2 < heightSegments; i2++) {
         for (let j = 0; j < widthSegments; j++) {
           const x1 = j * segmentWidth - width / 2;
-          const y1 = i * segmentHeight - height / 2;
+          const y1 = i2 * segmentHeight - height / 2;
           const z = 0;
           const x2 = (j + 1) * segmentWidth - width / 2;
           const y2 = y1;
           const x3 = x1;
-          const y3 = (i + 1) * segmentHeight - height / 2;
+          const y3 = (i2 + 1) * segmentHeight - height / 2;
           const x4 = x1;
           const y4 = y3;
           const x5 = x2;
@@ -694,6 +694,13 @@
         }
       }
       super(positions);
+      const uvs = [];
+      for (var i = 0; i < positions.length; i += 3) {
+        const x = (positions[i] + width / 2) / width;
+        const y = (positions[i + 1] + height / 2) / height;
+        uvs.push(x, y);
+      }
+      this.setAttribute("aUV", new Float32Array(uvs), 2);
     }
   };
 
@@ -728,13 +735,14 @@
   var Cube = class extends Geometry {
     constructor(width, height, depth, widthSegments, heightSegments, depthSegments) {
       const positions = [];
-      createSide("x", "y", "z", width, height, depth, widthSegments, heightSegments, "front");
-      createSide("x", "y", "z", width, height, -depth, widthSegments, heightSegments, "back");
-      createSide("x", "z", "y", width, depth, height, widthSegments, depthSegments, "back");
-      createSide("x", "z", "y", width, depth, -height, widthSegments, depthSegments, "front");
-      createSide("z", "y", "x", depth, height, width, depthSegments, heightSegments, "back");
-      createSide("z", "y", "x", depth, height, -width, depthSegments, heightSegments, "front");
-      function createSide(x, y, z, xLength, yLength, depth2, xSegments, ySegments, direction) {
+      const uvs = [];
+      createSide("x", "y", "z", width, height, depth, widthSegments, heightSegments, "front", false, false);
+      createSide("x", "y", "z", width, height, -depth, widthSegments, heightSegments, "back", true, false);
+      createSide("x", "z", "y", width, depth, height, widthSegments, depthSegments, "back", false, true);
+      createSide("x", "z", "y", width, depth, -height, widthSegments, depthSegments, "front", false, false);
+      createSide("z", "y", "x", depth, height, width, depthSegments, heightSegments, "back", true, false);
+      createSide("z", "y", "x", depth, height, -width, depthSegments, heightSegments, "front", false, false);
+      function createSide(x, y, z, xLength, yLength, depth2, xSegments, ySegments, direction, uvFlipX, uvFlipY) {
         const segmentX = xLength / xSegments;
         const segmentY = yLength / ySegments;
         const z1 = depth2 / 2;
@@ -748,33 +756,66 @@
             const y1 = i * segmentY - yLength / 2;
             const x2 = (j + 1) * segmentX - xLength / 2;
             const y2 = (i + 1) * segmentY - yLength / 2;
-            point[x].push(x1);
-            point[y].push(y1);
-            point[z].push(z1);
-            point[x].push(x2);
-            point[y].push(y1);
-            point[z].push(z1);
-            point[x].push(x1);
-            point[y].push(y2);
-            point[z].push(z1);
-            point[x].push(x1);
-            point[y].push(y2);
-            point[z].push(z1);
-            point[x].push(x2);
-            point[y].push(y1);
-            point[z].push(z1);
-            point[x].push(x2);
-            point[y].push(y2);
-            point[z].push(z1);
             if (direction === "front") {
-              positions.push(point.x[0], point.y[0], point.z[0], point.x[1], point.y[1], point.z[1], point.x[2], point.y[2], point.z[2], point.x[3], point.y[3], point.z[3], point.x[4], point.y[4], point.z[4], point.x[5], point.y[5], point.z[5]);
+              point[x].push(x1);
+              point[y].push(y1);
+              point[z].push(z1);
+              point[x].push(x2);
+              point[y].push(y1);
+              point[z].push(z1);
+              point[x].push(x1);
+              point[y].push(y2);
+              point[z].push(z1);
+              point[x].push(x1);
+              point[y].push(y2);
+              point[z].push(z1);
+              point[x].push(x2);
+              point[y].push(y1);
+              point[z].push(z1);
+              point[x].push(x2);
+              point[y].push(y2);
+              point[z].push(z1);
             } else if (direction === "back") {
-              positions.push(point.x[0], point.y[0], point.z[0], point.x[2], point.y[2], point.z[2], point.x[1], point.y[1], point.z[1], point.x[3], point.y[3], point.z[3], point.x[5], point.y[5], point.z[5], point.x[4], point.y[4], point.z[4]);
+              point[x].push(x2);
+              point[y].push(y1);
+              point[z].push(z1);
+              point[x].push(x1);
+              point[y].push(y1);
+              point[z].push(z1);
+              point[x].push(x2);
+              point[y].push(y2);
+              point[z].push(z1);
+              point[x].push(x2);
+              point[y].push(y2);
+              point[z].push(z1);
+              point[x].push(x1);
+              point[y].push(y1);
+              point[z].push(z1);
+              point[x].push(x1);
+              point[y].push(y2);
+              point[z].push(z1);
+            }
+            positions.push(point.x[0], point.y[0], point.z[0], point.x[1], point.y[1], point.z[1], point.x[2], point.y[2], point.z[2], point.x[3], point.y[3], point.z[3], point.x[4], point.y[4], point.z[4], point.x[5], point.y[5], point.z[5]);
+            for (var k = 0; k < 6; k++) {
+              let uvX;
+              let uvY;
+              if (uvFlipX) {
+                uvX = 1 - (point[x][k] + xLength / 2) / xLength;
+              } else {
+                uvX = (point[x][k] + xLength / 2) / xLength;
+              }
+              if (uvFlipY) {
+                uvY = 1 - (point[y][k] + yLength / 2) / yLength;
+              } else {
+                uvY = (point[y][k] + yLength / 2) / yLength;
+              }
+              uvs.push(uvX, uvY);
             }
           }
         }
       }
       super(positions);
+      this.setAttribute("aUV", new Float32Array(uvs), 2);
     }
   };
 
@@ -888,47 +929,34 @@
   var renderer = new Sandbox.Renderer(canvas);
   renderer.setPixelRatio(1);
   var volume = new Sandbox.Volume();
-  var sphere = new Sandbox.Sphere(0.5, 64);
   var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   sphereShader.setUniform("uTime", 0, "1f");
-  var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
-  volume.add(sphereMesh);
-  sphereMesh.position.x = 2;
-  var cube = new Sandbox.Cube(1, 1, 1, 64, 64, 64);
+  var cube = new Sandbox.Cube(1, 2, 3, 10, 12, 16);
   var cubeMesh = new Sandbox.Mesh(cube, sphereShader);
+  cubeMesh.setScale(0.5, 0.5, 0.5);
   volume.add(cubeMesh);
-  cubeMesh.position.x = -2;
   var tetra = new Sandbox.Tetrahedron(1);
   var tetraMesh = new Sandbox.Mesh(tetra, sphereShader);
-  volume.add(tetraMesh);
+  tetraMesh.position.x = 1.5;
   tetraMesh.position.y = -(Math.sqrt(3) / 2) / 6;
+  console.log(cubeMesh);
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 3;
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
   var time = 0;
-  var cameraX = document.getElementById("cameraX");
-  var cameraY = document.getElementById("cameraY");
-  cameraX.addEventListener("input", (event) => {
-    camera.position.x = event.target.value;
+  var rotateY = document.getElementById("rotateY");
+  var rotateX = document.getElementById("rotateX");
+  rotateY.addEventListener("input", (event) => {
+    cubeMesh.setRotationY(event.target.value);
   });
-  cameraY.addEventListener("input", (event) => {
-    camera.position.y = event.target.value;
+  rotateX.addEventListener("input", (event) => {
+    cubeMesh.setRotationX(event.target.value);
   });
   var draw = () => {
     renderer.render(volume, camera);
     time += 0.1;
-    sphereMesh.setRotationX(time * 3);
-    sphereMesh.setRotationY(time * 4);
-    cubeMesh.setRotationX(time * 3);
-    cubeMesh.setRotationY(time * 4);
-    tetraMesh.setRotationX(time * 3);
-    tetraMesh.setRotationY(time * 4);
-    sphereMesh.shader.uniforms.uTime.value = time;
-    cameraX.value = Math.cos(time / 4);
-    camera.position.x = Math.cos(time / 4);
-    cameraY.value = Math.sin(time / 4);
-    camera.position.y = Math.sin(time / 4);
+    tetraMesh.setRotationY(-time * 4);
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
@@ -970,7 +998,5 @@
   };
   window.setTimeout(() => {
     controls.classList.add("active");
-    cameraX.classList.add("active");
-    cameraY.classList.add("active");
   }, 500);
 })();

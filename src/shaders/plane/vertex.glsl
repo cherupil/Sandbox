@@ -1,12 +1,16 @@
 attribute vec4 aPosition;
+attribute vec3 aNormal;
+attribute vec2 aUV;
 
 uniform mat4 uMatrix;
 uniform float uTime;
 
+varying vec3 vNormal;
+varying vec2 vUV;
+
 void main() {
 	vec4 position = uMatrix * aPosition;
-	position.x += sin(position.y * 24.0 + (uTime * 1.0)) / 160.0;
-	position.y += sin(position.z * 40.0 + (uTime * 1.1)) / 160.0;
-	position.z += sin(position.x * 32.0 + (uTime * 1.2)) / 160.0;
 	gl_Position = position;
+	vNormal = aNormal;
+	vUV = aUV;
 }
