@@ -1,8 +1,8 @@
 (() => {
-  // src/shaders/sphere/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+  // src/shaders/plane/vertex.glsl
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal * 0.5 + 0.5;\n	vUV = aUV;\n}";
 
-  // src/shaders/sphere/fragment.glsl
+  // src/shaders/plane/fragment.glsl
   var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(vUV, 0.0, 1.0);\n}";
 
   // src/js/modules/Renderer.js
@@ -675,15 +675,15 @@
       const positions = [];
       const segmentWidth = width / widthSegments;
       const segmentHeight = height / heightSegments;
-      for (let i = 0; i < heightSegments; i++) {
+      for (let i2 = 0; i2 < heightSegments; i2++) {
         for (let j = 0; j < widthSegments; j++) {
           const x1 = j * segmentWidth - width / 2;
-          const y1 = i * segmentHeight - height / 2;
+          const y1 = i2 * segmentHeight - height / 2;
           const z = 0;
           const x2 = (j + 1) * segmentWidth - width / 2;
           const y2 = y1;
           const x3 = x1;
-          const y3 = (i + 1) * segmentHeight - height / 2;
+          const y3 = (i2 + 1) * segmentHeight - height / 2;
           const x4 = x1;
           const y4 = y3;
           const x5 = x2;
@@ -694,10 +694,19 @@
         }
       }
       super(positions);
+      const normals = [];
+      for (var i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        const z = 1;
+        const magnitude = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+        normals.push(x / magnitude, y / magnitude, z / magnitude);
+      }
+      this.setAttribute("aNormal", new Float32Array(normals), 3);
       const uvs = [];
-      for (let i = 0; i < positions.length; i += 3) {
-        const x = (positions[i] + width / 2) / width;
-        const y = (positions[i + 1] + height / 2) / height;
+      for (let i2 = 0; i2 < positions.length; i2 += 3) {
+        const x = (positions[i2] + width / 2) / width;
+        const y = (positions[i2 + 1] + height / 2) / height;
         uvs.push(x, y);
       }
       this.setAttribute("aUV", new Float32Array(uvs), 2);
@@ -709,14 +718,30 @@
     constructor(radius, segments) {
       const positions = [];
       positions.push(0, 0, 0);
-      for (let i = 0; i < segments; i++) {
-        const x = Math.cos(i * Math.PI / (segments / 2)) * radius;
-        const y = Math.sin(i * Math.PI / (segments / 2)) * radius;
+      for (let i2 = 0; i2 < segments; i2++) {
+        const x = Math.cos(i2 * Math.PI / (segments / 2)) * radius;
+        const y = Math.sin(i2 * Math.PI / (segments / 2)) * radius;
         const z = 0;
         positions.push(x, y, z);
       }
       positions.push(Math.cos(0) * radius, Math.sin(0) * radius, 0);
       super(positions);
+      const normals = [];
+      for (var i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        const z = 1;
+        const magnitude = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+        normals.push(x / magnitude, y / magnitude, z / magnitude);
+      }
+      this.setAttribute("aNormal", new Float32Array(normals), 3);
+      const uvs = [];
+      for (let i2 = 0; i2 < positions.length; i2 += 3) {
+        const x = (positions[i2] + radius) / (radius * 2);
+        const y = (positions[i2 + 1] + radius) / (radius * 2);
+        uvs.push(x, y);
+      }
+      this.setAttribute("aUV", new Float32Array(uvs), 2);
       this.type = "TRIANGLE_FAN";
     }
   };
@@ -963,18 +988,21 @@
   var renderer = new Sandbox.Renderer(canvas);
   renderer.setPixelRatio(1);
   var volume = new Sandbox.Volume();
-  var sphere = new Sandbox.Sphere(1, 64);
-  var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
-  sphereShader.setUniform("uTime", 0, "1f");
-  var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
-  volume.add(sphereMesh);
-  var cube = new Sandbox.Cube(1, 2, 3, 10, 12, 16);
-  var cubeMesh = new Sandbox.Mesh(cube, sphereShader);
-  cubeMesh.setScale(0.5, 0.5, 0.5);
-  var tetra = new Sandbox.Tetrahedron(1);
-  var tetraMesh = new Sandbox.Mesh(tetra, sphereShader);
-  tetraMesh.position.y = -(Math.sqrt(3) / 2) / 6;
-  console.log(sphereMesh);
+  var circle = new Sandbox.Circle(1, 64);
+  var circleShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  var circleMesh = new Sandbox.Mesh(circle, circleShader);
+  volume.add(circleMesh);
+  console.log(circleMesh);
+  var plane = new Sandbox.Plane(2, 2, 8, 8);
+  var planeMesh = new Sandbox.Mesh(plane, circleShader);
+  volume.add(planeMesh);
+  planeMesh.setPosition(-3, 0, 0);
+  console.log(planeMesh);
+  var cube = new Sandbox.Cube(1, 1, 1, 8, 8, 8);
+  var cubeMesh = new Sandbox.Mesh(cube, circleShader);
+  volume.add(cubeMesh);
+  cubeMesh.setPosition(3, 0, 0);
+  console.log(cubeMesh);
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 3;
   renderer.resize();
@@ -983,10 +1011,14 @@
   var rotateY = document.getElementById("rotateY");
   var rotateX = document.getElementById("rotateX");
   rotateY.addEventListener("input", (event) => {
-    sphereMesh.setRotationY(event.target.value);
+    circleMesh.setRotationY(event.target.value);
+    planeMesh.setRotationY(event.target.value);
+    cubeMesh.setRotationY(event.target.value);
   });
   rotateX.addEventListener("input", (event) => {
-    sphereMesh.setRotationX(event.target.value);
+    circleMesh.setRotationX(event.target.value);
+    planeMesh.setRotationX(event.target.value);
+    cubeMesh.setRotationX(event.target.value);
   });
   var draw = () => {
     renderer.render(volume, camera);
