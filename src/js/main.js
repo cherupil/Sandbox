@@ -13,12 +13,12 @@ renderer.setPixelRatio(1)
 const volume = new Sandbox.Volume()
 
 //Sphere
-//const sphere = new Sandbox.Sphere(0.5, 64)
+const sphere = new Sandbox.Sphere(1, 64)
 //sphere.type = 'LINE_LOOP'
 const sphereShader = new Sandbox.Program(renderer.gl, sphereShaderVertex, sphereShaderFragment)
 sphereShader.setUniform('uTime', 0, '1f')
-//const sphereMesh = new Sandbox.Mesh(sphere, sphereShader)
-//volume.add(sphereMesh)*/
+const sphereMesh = new Sandbox.Mesh(sphere, sphereShader)
+volume.add(sphereMesh)
 
 //Cube
 const cube = new Sandbox.Cube(1, 2, 3, 10, 12, 16)
@@ -33,7 +33,7 @@ cubeMesh.setScale(0.5, 0.5, 0.5)
 const tetra = new Sandbox.Tetrahedron(1)
 //tetra.type = 'LINE_LOOP'
 const tetraMesh = new Sandbox.Mesh(tetra, sphereShader)
-volume.add(tetraMesh)
+//volume.add(tetraMesh)
 
 //tetraMesh.position.x = 1.5
 
@@ -45,7 +45,7 @@ const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeSha
 const planeMesh = new Sandbox.Mesh(plane, planeShader)*/
 //volume.add(planeMesh)
 
-console.log(cubeMesh)
+console.log(sphereMesh)
 
 //Set Viewport
 const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
@@ -62,11 +62,11 @@ const rotateY = document.getElementById('rotateY')
 const rotateX = document.getElementById('rotateX')
 
 rotateY.addEventListener('input', event => {
-	cubeMesh.setRotationY(event.target.value)
+	sphereMesh.setRotationY(event.target.value)
 })
 
 rotateX.addEventListener('input', event => {
-	cubeMesh.setRotationX(event.target.value)
+	sphereMesh.setRotationX(event.target.value)
 })
 
 const draw = () => {
@@ -77,7 +77,7 @@ const draw = () => {
 	//cubeMesh.setRotationX(time * 3)
 	//cubeMesh.setRotationY(-time * 4)
 	//tetraMesh.setRotationX(time * 3)
-	tetraMesh.setRotationX(-time * 4)
+	//tetraMesh.setRotationX(-time * 4)
 	//sphereMesh.shader.uniforms.uTime.value = time
 	//cameraX.value = Math.cos(time/4)
 	//camera.position.x = Math.cos(time/4)

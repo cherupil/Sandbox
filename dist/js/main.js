@@ -832,9 +832,10 @@
   var Sphere = class extends Geometry {
     constructor(radius, segments) {
       const positions = [];
+      const uvs = [];
       const segmentSize = Math.PI * 2 / segments;
-      for (let i = 0; i <= segments; i++) {
-        for (let j = 0; j <= segments; j++) {
+      for (let i = 0; i < segments; i++) {
+        for (let j = 0; j < segments; j++) {
           const x1 = radius * Math.cos(j * segmentSize) * Math.sin(i * segmentSize);
           const y1 = radius * Math.cos(i * segmentSize);
           const z1 = radius * Math.sin(j * segmentSize) * Math.sin(i * segmentSize);
@@ -857,6 +858,30 @@
         }
       }
       super(positions);
+      for (let i = 0; i < this.attributes.aNormal.data.length; i += 3) {
+        let offset = 0;
+        if (this.attributes.aNormal.data[i + 1] == -1 && this.attributes.aNormal.data[i] >= 0) {
+          offset = -0.5;
+        } else if (this.attributes.aNormal.data[i + 1] == -1 && this.attributes.aNormal.data[i] < 0) {
+          offset = 0.5;
+        }
+        const u = 0.5 + Math.atan2(this.attributes.aNormal.data[i], this.attributes.aNormal.data[i + 2]) / (Math.PI * 2);
+        const v = 0.5 - Math.asin(this.attributes.aNormal.data[i + 1]) / Math.PI;
+        uvs.push(u + offset, 1 - v);
+      }
+      const pointsPerRow = 6 * 2 * segments;
+      const quarterCircle = 3 * (pointsPerRow / 4);
+      for (let i = 0; i < uvs.length; i += pointsPerRow) {
+        if (i !== 0) {
+          uvs[i - quarterCircle] = 1;
+          uvs[i - (quarterCircle - 2)] = 1;
+          uvs[i - (quarterCircle - 6)] = 1;
+        }
+      }
+      uvs[uvs.length - quarterCircle] = 1;
+      uvs[uvs.length - (quarterCircle - 2)] = 1;
+      uvs[uvs.length - (quarterCircle - 6)] = 1;
+      this.setAttribute("aUV", new Float32Array(uvs), 2);
     }
   };
 
@@ -938,16 +963,18 @@
   var renderer = new Sandbox.Renderer(canvas);
   renderer.setPixelRatio(1);
   var volume = new Sandbox.Volume();
+  var sphere = new Sandbox.Sphere(1, 64);
   var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   sphereShader.setUniform("uTime", 0, "1f");
+  var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
+  volume.add(sphereMesh);
   var cube = new Sandbox.Cube(1, 2, 3, 10, 12, 16);
   var cubeMesh = new Sandbox.Mesh(cube, sphereShader);
   cubeMesh.setScale(0.5, 0.5, 0.5);
   var tetra = new Sandbox.Tetrahedron(1);
   var tetraMesh = new Sandbox.Mesh(tetra, sphereShader);
-  volume.add(tetraMesh);
   tetraMesh.position.y = -(Math.sqrt(3) / 2) / 6;
-  console.log(cubeMesh);
+  console.log(sphereMesh);
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 3;
   renderer.resize();
@@ -956,15 +983,14 @@
   var rotateY = document.getElementById("rotateY");
   var rotateX = document.getElementById("rotateX");
   rotateY.addEventListener("input", (event) => {
-    cubeMesh.setRotationY(event.target.value);
+    sphereMesh.setRotationY(event.target.value);
   });
   rotateX.addEventListener("input", (event) => {
-    cubeMesh.setRotationX(event.target.value);
+    sphereMesh.setRotationX(event.target.value);
   });
   var draw = () => {
     renderer.render(volume, camera);
     time += 0.1;
-    tetraMesh.setRotationX(-time * 4);
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {

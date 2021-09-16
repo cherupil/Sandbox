@@ -3,11 +3,12 @@ import Geometry from './Geometry'
 export default class Sphere extends Geometry {
 	constructor(radius, segments) {
 		const positions = []
+		const uvs = []
 
 		const segmentSize = (Math.PI * 2) / segments
 
-		for (let i = 0; i <= segments; i++) {
-			for (let j = 0; j <= segments; j++) {
+		for (let i = 0; i < segments; i++) {
+			for (let j = 0; j < segments; j++) {
 				const x1 = radius * Math.cos(j * segmentSize) * Math.sin(i * segmentSize)
 				const y1 = radius * Math.cos(i * segmentSize)
 				const z1 = radius * Math.sin(j * segmentSize) * Math.sin(i * segmentSize)
@@ -37,5 +38,41 @@ export default class Sphere extends Geometry {
 		}
 
 		super(positions)
+
+		for (let i = 0; i < this.attributes.aNormal.data.length; i+=3) {
+			let offset = 0
+			if (
+				(this.attributes.aNormal.data[i+1] == -1) &&
+				(this.attributes.aNormal.data[i] >= 0)
+			) {
+				offset = -0.5
+			} else if (
+				(this.attributes.aNormal.data[i+1] == -1) &&
+				(this.attributes.aNormal.data[i] < 0)
+			) {
+				offset = 0.5
+			}
+			const u = 0.5 + (Math.atan2(this.attributes.aNormal.data[i], this.attributes.aNormal.data[i+2]) / (Math.PI * 2))
+			const v = 0.5 - (Math.asin(this.attributes.aNormal.data[i+1]) / Math.PI)
+			uvs.push(u + offset, 1 - v)
+		}
+
+		const pointsPerRow = 6 * 2 * segments
+
+		const quarterCircle = 3 * (pointsPerRow / 4)
+
+		for (let i = 0; i < uvs.length; i+=pointsPerRow) {
+			if (i !== 0) {
+				uvs[i-(quarterCircle)] = 1
+				uvs[i-(quarterCircle-2)] = 1
+				uvs[i-(quarterCircle-6)] = 1
+			}
+		}
+
+		uvs[uvs.length - (quarterCircle)] = 1
+		uvs[uvs.length - (quarterCircle - 2)] = 1
+		uvs[uvs.length - (quarterCircle - 6)] = 1
+
+		this.setAttribute('aUV', new Float32Array(uvs), 2)
 	}
 }
