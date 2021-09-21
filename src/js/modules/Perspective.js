@@ -17,6 +17,7 @@ export default class Perspective {
 			z: 0
 		}
 		this.viewMatrix = Matrix.identity()
+		this.lookAtEnabled = false
 		this._createMatrix()
 	}
 
@@ -44,6 +45,12 @@ export default class Perspective {
 		matrix = Matrix.multiply(matrix, rotationX)
 		matrix = Matrix.multiply(matrix, rotationY)
 		matrix = Matrix.multiply(matrix, rotationZ)
+		if (this.lookAtEnabled) {
+			matrix = Matrix.lookAt(
+				[matrix[12], matrix[13], matrix[14]],
+				[this.lookAtTarget.localMatrix[12], this.lookAtTarget.localMatrix[13], this.lookAtTarget.localMatrix[14]]
+			)
+		}
 		this.viewMatrix = Matrix.inverse(matrix)
 	}
 
@@ -55,44 +62,41 @@ export default class Perspective {
 	setFieldOfView(fieldOfView) {
 		this.fieldOfView = fieldOfView * Math.PI / 180
 		this._createMatrix()
-		this.setViewProjectionMatrix()
 	}
 
 	setAspectRatio(aspectRatio) {
 		this.aspectRatio = aspectRatio
 		this._createMatrix()
-		this.setViewProjectionMatrix()
 	}
 
 	setNear(near) {
 		this.near = near
 		this._createMatrix()
-		this.setViewProjectionMatrix()
 	}
 
 	setFar(far) {
 		this.far = far
 		this._createMatrix()
-		this.setViewProjectionMatrix()
 	}
 
 	setPosition(x, y, z) {
 		this.position = { x, y, z }
-		this.setViewProjectionMatrix()
 	}
 
 	setRotationX(angle) {
 		this.rotation.x = angle
-		this.setViewProjectionMatrix()
 	}
 
 	setRotationY(angle) {
 		this.rotation.y = angle
-		this.setViewProjectionMatrix()
 	}
 
 	setRotationZ(angle) {
 		this.rotation.z = angle
-		this.setViewProjectionMatrix()
+	}
+
+	lookAt(target) {
+		this.lookAtEnabled = true
+		this.lookAtTarget = target
 	}
 }

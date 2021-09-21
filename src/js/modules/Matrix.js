@@ -1,3 +1,5 @@
+import Vector from './Vector.js'
+
 export default class Matrix {
 	static multiply(a, b) {
 		const b00 = b[0 * 4 + 0]
@@ -199,6 +201,19 @@ export default class Matrix {
 			0, sy, 0, 0,
 			0, 0, sz, 0,
 			0, 0, 0, 1
+		]
+	}
+
+	static lookAt(viewer, target) {
+		const z = Vector.normalize(Vector.subtract(viewer, target))
+		const x = Vector.normalize(Vector.cross([0, 1, 0], z))
+		const y = Vector.normalize(Vector.cross(z, x))
+
+		return [
+			x[0], x[1], x[2], 0,
+			y[0], y[1], y[2], 0,
+			z[0], z[1], z[2], 0,
+			viewer[0], viewer[1], viewer[2], 1
 		]
 	}
 }

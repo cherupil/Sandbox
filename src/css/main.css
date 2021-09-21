@@ -51,10 +51,11 @@ canvas#webgl {
 
 input[type="range"] {
 	background-color: transparent;
-	padding-bottom: 8px;
+	padding-bottom: 0px;
 	padding-right: 16px;
 	padding-top: 8px;
 	-webkit-appearance: none;
+	width: 100%;
 }
 
 .controls {
@@ -68,13 +69,12 @@ input[type="range"] {
 	cursor: move;
 	display: flex;
 	//display: none;
-	flex-direction: column;
+	//flex-direction: column;
 	left: 80px;
 	//left: 50%;
-	padding: 32px 16px 0px 32px;
+	padding: 24px 16px 0px 32px;
 	position: fixed;
 	transform: translateY(calc(100% + 64px));
-	width: 360px;
 	z-index: 3;
 }
 
@@ -83,22 +83,96 @@ input[type="range"] {
 	transition: transform 1200ms cubic-bezier(0.25, 0.5, 0, 1);
 }
 
+.sliders {
+	align-items: stretch;
+	display: flex;
+	flex-direction: column;
+	width: 300px;
+}
+
+.sliders h3 {
+	color: white;
+	font-family: system-ui;
+	font-size: 20px;
+	font-weight: 400;
+	letter-spacing: 4px;
+	margin-bottom: 20px;
+	opacity: 0.75;
+	text-align: center;
+	text-transform: uppercase;
+}
+
+.sliders .input {
+	display: flex;
+	margin-top: 14px;
+}
+
+.input label {
+	background-color: rgba(0,0,0,0.5);
+	border-radius: 50%;
+	color: white;
+	flex-shrink: 0;
+	font-family: system-ui;
+	font-weight: 600;
+	height: 32px;
+	line-height: 32px;
+	margin-right: 16px;
+	margin-top: -6px;
+	text-align: center;
+	width: 32px;
+}
+
+.buttons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	margin-bottom: 16px;
+	margin-left: 64px;
+	margin-right: 16px;
+	position: relative;
+}
+
+.buttons:before {
+	background-color: rgba(255, 255, 255, 0.25);
+	content: '';
+	display: block;
+	height: calc(100% - 20px);
+	left: -40px;
+	position: absolute;
+	top: 8px;
+	width: 1px;
+}
+
+.buttons h3 {
+	color: white;
+	font-family: system-ui;
+	font-size: 20px;
+	font-weight: 400;
+	letter-spacing: 4px;
+	margin-bottom: 20px;
+	opacity: 0.75;
+	text-align: center;
+	text-transform: uppercase;
+	width: 100%;
+}
+
 button {
 	background-color: rgba(63, 63, 63, 1);
-	border: none;
+	border: 2px solid rgba(255, 255, 255, 0);
 	border-radius: 8px;
 	box-shadow: 0 0 8px 0 rgba(0,0,0,0.25), 0 0 16px 0 rgba(0,0,0,0.125);
 	color: white;
 	cursor: pointer;
 	font-family: system-ui, sans-serif;
 	font-size: 16px;
+	font-weight: 600;
 	height: 48px;
 	letter-spacing: 2px;
-	margin-right: 16px;
+	margin-bottom: 12px;
 	text-transform: uppercase;
 	transition: background-color 200ms ease, border 200ms ease, box-shadow 200ms ease;
 	-webkit-appearance: none;
-	width: 50%;
+	width: calc(33.33333% - 8px);
 }
 
 button:hover {

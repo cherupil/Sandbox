@@ -30,9 +30,9 @@ export default class Tetra extends Geometry {
 
 		for (let i = 0; i < positions.length; i+=9) {
 			if (i === 27) {
-				uvs.push(1, 0, 0.5, 0.5, 0, 0)
+				uvs.push(1, 0, 0.5, 1, 0, 0)
 			} else {
-				uvs.push(0, 0, 1, 0, 0.5, 0.5)
+				uvs.push(0, 0, 1, 0, 0.5, 1)
 			}
 		}
 

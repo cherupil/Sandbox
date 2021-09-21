@@ -12,8 +12,26 @@
     	<main>
     		<canvas id="webgl"></canvas>
             <div class="controls">
-                <input type="range" min="-180" max="180" value="0" step="0.01" id="rotateY">
-                <input type="range" min="-180" max="180" value="0" step="0.01" id="rotateX">
+                <div class="sliders">
+                    <h3>Position</h3>
+                    <div class="input">
+                        <label for="translateX">X</label>
+                        <input type="range" min="-5" max="5" value="0" step="0.01" id="translateX">
+                    </div>
+                    <div class="input">
+                        <label for="translateY">Y</label>
+                        <input type="range" min="-5" max="5" value="0" step="0.01" id="translateY">
+                    </div>
+                </div>
+                <div class="buttons">
+                    <h3>Focus</h3>
+                    <button id="plane">Plane</button>
+                    <button id="circle">Circle</button>
+                    <button id="triangle">Triangle</button>
+                    <button id="cube">Cube</button>
+                    <button id="sphere">Sphere</button>
+                    <button id="tetra">Tetra</button>
+                </div>
             </div>
     	</main>
         <script type="module" src="dist/js/main.js"></script>

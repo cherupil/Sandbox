@@ -91,6 +91,40 @@
     }
   };
 
+  // src/js/modules/Vector.js
+  var Vector = class {
+    static cross(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+      ];
+    }
+    static subtract(a, b) {
+      return [
+        a[0] - b[0],
+        a[1] - b[1],
+        a[2] - b[2]
+      ];
+    }
+    static normalize(v) {
+      const magnitude = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2);
+      if (magnitude > 1e-5) {
+        return [
+          v[0] / magnitude,
+          v[1] / magnitude,
+          v[2] / magnitude
+        ];
+      } else {
+        return [
+          0,
+          0,
+          0
+        ];
+      }
+    }
+  };
+
   // src/js/modules/Matrix.js
   var Matrix = class {
     static multiply(a, b) {
@@ -339,6 +373,29 @@
         1
       ];
     }
+    static lookAt(viewer, target) {
+      const z = Vector.normalize(Vector.subtract(viewer, target));
+      const x = Vector.normalize(Vector.cross([0, 1, 0], z));
+      const y = Vector.normalize(Vector.cross(z, x));
+      return [
+        x[0],
+        x[1],
+        x[2],
+        0,
+        y[0],
+        y[1],
+        y[2],
+        0,
+        z[0],
+        z[1],
+        z[2],
+        0,
+        viewer[0],
+        viewer[1],
+        viewer[2],
+        1
+      ];
+    }
   };
 
   // src/js/modules/Orthographic.js
@@ -393,6 +450,9 @@
       matrix = Matrix.multiply(matrix, rotationX);
       matrix = Matrix.multiply(matrix, rotationY);
       matrix = Matrix.multiply(matrix, rotationZ);
+      if (this.lookAtEnabled) {
+        matrix = Matrix.lookAt([matrix[12], matrix[13], matrix[14]], [this.lookAtTarget.localMatrix[12], this.lookAtTarget.localMatrix[13], this.lookAtTarget.localMatrix[14]]);
+      }
       this.viewMatrix = Matrix.inverse(matrix);
     }
     setViewProjectionMatrix() {
@@ -425,19 +485,19 @@
     }
     setPosition(x, y, z) {
       this.position = { x, y, z };
-      this.setViewProjectionMatrix();
     }
     setRotationX(angle) {
       this.rotation.x = angle;
-      this.setViewProjectionMatrix();
     }
     setRotationY(angle) {
       this.rotation.y = angle;
-      this.setViewProjectionMatrix();
     }
     setRotationZ(angle) {
       this.rotation.z = angle;
-      this.setViewProjectionMatrix();
+    }
+    lookAt(target) {
+      this.lookAtEnabled = true;
+      this.lookAtTarget = target;
     }
   };
 
@@ -459,6 +519,7 @@
         z: 0
       };
       this.viewMatrix = Matrix.identity();
+      this.lookAtEnabled = false;
       this._createMatrix();
     }
     _createMatrix() {
@@ -495,6 +556,9 @@
       matrix = Matrix.multiply(matrix, rotationX);
       matrix = Matrix.multiply(matrix, rotationY);
       matrix = Matrix.multiply(matrix, rotationZ);
+      if (this.lookAtEnabled) {
+        matrix = Matrix.lookAt([matrix[12], matrix[13], matrix[14]], [this.lookAtTarget.localMatrix[12], this.lookAtTarget.localMatrix[13], this.lookAtTarget.localMatrix[14]]);
+      }
       this.viewMatrix = Matrix.inverse(matrix);
     }
     setViewProjectionMatrix() {
@@ -504,38 +568,34 @@
     setFieldOfView(fieldOfView) {
       this.fieldOfView = fieldOfView * Math.PI / 180;
       this._createMatrix();
-      this.setViewProjectionMatrix();
     }
     setAspectRatio(aspectRatio2) {
       this.aspectRatio = aspectRatio2;
       this._createMatrix();
-      this.setViewProjectionMatrix();
     }
     setNear(near) {
       this.near = near;
       this._createMatrix();
-      this.setViewProjectionMatrix();
     }
     setFar(far) {
       this.far = far;
       this._createMatrix();
-      this.setViewProjectionMatrix();
     }
     setPosition(x, y, z) {
       this.position = { x, y, z };
-      this.setViewProjectionMatrix();
     }
     setRotationX(angle) {
       this.rotation.x = angle;
-      this.setViewProjectionMatrix();
     }
     setRotationY(angle) {
       this.rotation.y = angle;
-      this.setViewProjectionMatrix();
     }
     setRotationZ(angle) {
       this.rotation.z = angle;
-      this.setViewProjectionMatrix();
+    }
+    lookAt(target) {
+      this.lookAtEnabled = true;
+      this.lookAtTarget = target;
     }
   };
 
@@ -756,9 +816,9 @@
       const uvs = [];
       for (let i = 0; i < positions.length; i += 9) {
         if (i === 27) {
-          uvs.push(1, 0, 0.5, 0.5, 0, 0);
+          uvs.push(1, 0, 0.5, 1, 0, 0);
         } else {
-          uvs.push(0, 0, 1, 0, 0.5, 0.5);
+          uvs.push(0, 0, 1, 0, 0.5, 1);
         }
       }
       this.setAttribute("aUV", new Float32Array(uvs), 2);
@@ -988,41 +1048,87 @@
   var renderer = new Sandbox.Renderer(canvas);
   renderer.setPixelRatio(1);
   var volume = new Sandbox.Volume();
-  var circle = new Sandbox.Circle(1, 64);
-  var circleShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
-  var circleMesh = new Sandbox.Mesh(circle, circleShader);
-  volume.add(circleMesh);
-  console.log(circleMesh);
-  var plane = new Sandbox.Plane(2, 2, 8, 8);
-  var planeMesh = new Sandbox.Mesh(plane, circleShader);
+  var plane = new Sandbox.Plane(2, 2, 1, 1);
+  var planeShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  var planeMesh = new Sandbox.Mesh(plane, planeShader);
   volume.add(planeMesh);
-  planeMesh.setPosition(-3, 0, 0);
-  console.log(planeMesh);
-  var cube = new Sandbox.Cube(1, 1, 1, 8, 8, 8);
-  var cubeMesh = new Sandbox.Mesh(cube, circleShader);
+  planeMesh.setPosition(-3, 1.5, 0);
+  var circle = new Sandbox.Circle(1, 64);
+  var circleMesh = new Sandbox.Mesh(circle, planeShader);
+  volume.add(circleMesh);
+  circleMesh.setPosition(0, 1.5, 0);
+  var triangleSize = 2.25;
+  var triangleHeight = Math.sqrt(3) / 2 * triangleSize;
+  var trianglePositions = [];
+  trianglePositions.push(-triangleSize / 2, -(triangleSize * Math.sqrt(3)) / 6, 0, triangleSize / 2, -(triangleSize * Math.sqrt(3)) / 6, 0, 0, triangleSize * Math.sqrt(3) / 3, 0);
+  var triangle = new Sandbox.Geometry(trianglePositions);
+  var triangleUVs = [];
+  triangleUVs.push(0, 0, 1, 0, 0.5, 1);
+  triangle.setAttribute("aUV", new Float32Array(triangleUVs), 2);
+  var triangleMesh = new Sandbox.Mesh(triangle, planeShader);
+  volume.add(triangleMesh);
+  triangleMesh.setPosition(3, 1.125, 0);
+  var cube = new Sandbox.Cube(2, 2, 2, 8, 8, 8);
+  var cubeMesh = new Sandbox.Mesh(cube, planeShader);
   volume.add(cubeMesh);
-  cubeMesh.setPosition(3, 0, 0);
-  console.log(cubeMesh);
+  cubeMesh.setPosition(-3, -1.5, -1);
+  var sphere = new Sandbox.Sphere(1, 64);
+  var sphereMesh = new Sandbox.Mesh(sphere, planeShader);
+  volume.add(sphereMesh);
+  sphereMesh.setPosition(0, -1.5, -1);
+  var tetra = new Sandbox.Tetrahedron(2.25);
+  var tetraMesh = new Sandbox.Mesh(tetra, planeShader);
+  volume.add(tetraMesh);
+  tetraMesh.setPosition(3, -1.875, -1);
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
-  camera.position.z = 3;
+  camera.position.z = 5;
   renderer.resize();
   renderer.gl.clearColor(0, 0, 0, 0);
   var time = 0;
-  var rotateY = document.getElementById("rotateY");
-  var rotateX = document.getElementById("rotateX");
-  rotateY.addEventListener("input", (event) => {
-    circleMesh.setRotationY(event.target.value);
-    planeMesh.setRotationY(event.target.value);
-    cubeMesh.setRotationY(event.target.value);
+  var translateX = document.getElementById("translateX");
+  var translateY = document.getElementById("translateY");
+  translateX.addEventListener("input", (event) => {
+    camera.position.x = event.target.value;
   });
-  rotateX.addEventListener("input", (event) => {
-    circleMesh.setRotationX(event.target.value);
-    planeMesh.setRotationX(event.target.value);
-    cubeMesh.setRotationX(event.target.value);
+  translateY.addEventListener("input", (event) => {
+    camera.position.y = event.target.value;
+  });
+  var buttons = document.querySelectorAll("button");
+  buttons.forEach((button) => {
+    button.addEventListener("click", (event) => {
+      buttons.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      switch (button.id) {
+        case "plane":
+          camera.lookAt(planeMesh);
+          break;
+        case "circle":
+          camera.lookAt(circleMesh);
+          break;
+        case "triangle":
+          camera.lookAt(triangleMesh);
+          break;
+        case "cube":
+          camera.lookAt(cubeMesh);
+          break;
+        case "sphere":
+          camera.lookAt(sphereMesh);
+          break;
+        case "tetra":
+          camera.lookAt(tetraMesh);
+          break;
+        default:
+          break;
+      }
+    });
   });
   var draw = () => {
     renderer.render(volume, camera);
     time += 0.1;
+    translateX.value = Math.cos(time / 4) * 5;
+    camera.position.x = Math.cos(time / 4) * 5;
+    translateY.value = Math.sin(time / 4) * 5;
+    camera.position.y = Math.sin(time / 4) * 5;
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {
@@ -1064,5 +1170,7 @@
   };
   window.setTimeout(() => {
     controls.classList.add("active");
+    translateX.classList.add("active");
+    translateY.classList.add("active");
   }, 500);
 })();

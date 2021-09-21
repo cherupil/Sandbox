@@ -12,35 +12,68 @@ renderer.setPixelRatio(1)
 
 const volume = new Sandbox.Volume()
 
-//Circle
-const circle = new Sandbox.Circle(1, 64)
-const circleShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
-const circleMesh = new Sandbox.Mesh(circle, circleShader)
-volume.add(circleMesh)
-
-console.log(circleMesh)
-
 //Plane
-const plane = new Sandbox.Plane(2, 2, 8, 8)
-const planeMesh = new Sandbox.Mesh(plane, circleShader)
+const plane = new Sandbox.Plane(2, 2, 1, 1)
+const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
+const planeMesh = new Sandbox.Mesh(plane, planeShader)
 volume.add(planeMesh)
 
-planeMesh.setPosition(-3, 0, 0)
+planeMesh.setPosition(-3, 1.5, 0)
 
-console.log(planeMesh)
+//Circle
+const circle = new Sandbox.Circle(1, 64)
+const circleMesh = new Sandbox.Mesh(circle, planeShader)
+volume.add(circleMesh)
+
+circleMesh.setPosition(0, 1.5, 0)
+
+//Triangle
+const triangleSize = 2.25
+const triangleHeight = (Math.sqrt(3) / 2) * triangleSize
+const trianglePositions = []
+trianglePositions.push(
+	-triangleSize/2, -(triangleSize * Math.sqrt(3)) / 6, 0,
+	triangleSize/2, -(triangleSize * Math.sqrt(3)) / 6, 0,
+	0, (triangleSize * Math.sqrt(3)) / 3, 0
+)
+const triangle = new Sandbox.Geometry(trianglePositions)
+const triangleUVs = []
+triangleUVs.push(
+	0, 0,
+	1, 0,
+	0.5, 1
+)
+triangle.setAttribute('aUV', new Float32Array(triangleUVs), 2)
+const triangleMesh = new Sandbox.Mesh(triangle, planeShader)
+volume.add(triangleMesh)
+
+triangleMesh.setPosition(3, 1.125, 0)
 
 //Cube
-const cube = new Sandbox.Cube(1, 1, 1, 8, 8, 8)
-const cubeMesh = new Sandbox.Mesh(cube, circleShader)
+const cube = new Sandbox.Cube(2, 2, 2, 8, 8, 8)
+const cubeMesh = new Sandbox.Mesh(cube, planeShader)
 volume.add(cubeMesh)
 
-cubeMesh.setPosition(3, 0, 0)
+cubeMesh.setPosition(-3, -1.5, -1)
 
-console.log(cubeMesh)
+//Sphere
+const sphere = new Sandbox.Sphere(1, 64)
+const sphereMesh = new Sandbox.Mesh(sphere, planeShader)
+volume.add(sphereMesh)
+
+sphereMesh.setPosition(0, -1.5, -1)
+
+//Sphere
+const tetra = new Sandbox.Tetrahedron(2.25)
+const tetraMesh = new Sandbox.Mesh(tetra, planeShader)
+volume.add(tetraMesh)
+
+tetraMesh.setPosition(3, -1.875, -1)
 
 //Set Viewport
 const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
-camera.position.z = 3
+//const camera = new Sandbox.Orthographic(-6 * aspectRatio, 6 * aspectRatio, -6, 6, -30, 30)
+camera.position.z = 5
 renderer.resize()
 
 //Clear canvas
@@ -48,24 +81,55 @@ renderer.gl.clearColor(0, 0, 0, 0)
 
 let time = 0
 
-const rotateY = document.getElementById('rotateY')
-const rotateX = document.getElementById('rotateX')
+const translateX = document.getElementById('translateX')
+const translateY = document.getElementById('translateY')
 
-rotateY.addEventListener('input', event => {
-	circleMesh.setRotationY(event.target.value)
-	planeMesh.setRotationY(event.target.value)
-	cubeMesh.setRotationY(event.target.value)
+translateX.addEventListener('input', event => {
+	camera.position.x = event.target.value
 })
 
-rotateX.addEventListener('input', event => {
-	circleMesh.setRotationX(event.target.value)
-	planeMesh.setRotationX(event.target.value)
-	cubeMesh.setRotationX(event.target.value)
+translateY.addEventListener('input', event => {
+	camera.position.y = event.target.value
+})
+
+const buttons = document.querySelectorAll('button')
+
+buttons.forEach(button => {
+	button.addEventListener('click', event => {
+		buttons.forEach(item => item.classList.remove('active'))
+		button.classList.add('active')
+		switch (button.id) {
+			case 'plane':
+				camera.lookAt(planeMesh)
+				break
+			case 'circle':
+				camera.lookAt(circleMesh)
+				break
+			case 'triangle':
+				camera.lookAt(triangleMesh)
+				break
+			case 'cube':
+				camera.lookAt(cubeMesh)
+				break
+			case 'sphere':
+				camera.lookAt(sphereMesh)
+				break
+			case 'tetra':
+				camera.lookAt(tetraMesh)
+				break
+			default:
+				break
+		}
+	})
 })
 
 const draw = () => {
 	renderer.render(volume, camera)
 	time += 0.1
+	translateX.value = Math.cos(time/4) * 5
+ 	camera.position.x = Math.cos(time/4) * 5
+ 	translateY.value = Math.sin(time/4) * 5
+ 	camera.position.y = Math.sin(time/4) * 5
 	window.requestAnimationFrame(draw)
 }
 
@@ -115,4 +179,6 @@ const removeDrag = () => {
 
 window.setTimeout(() => {
 	controls.classList.add('active')
+	translateX.classList.add('active')
+ 	translateY.classList.add('active')
 }, 500)
