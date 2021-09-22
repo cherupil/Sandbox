@@ -8,13 +8,16 @@ import Sandbox from './modules/Sandbox.js'
 let aspectRatio = window.innerWidth / window.innerHeight
 const canvas = document.getElementById('webgl')
 const renderer = new Sandbox.Renderer(canvas)
-renderer.setPixelRatio(1)
+//renderer.setPixelRatio(1)
+
+const jellyfish = new Sandbox.Texture(renderer.gl, './img/jellyfish.jpg')
 
 const volume = new Sandbox.Volume()
 
 //Plane
 const plane = new Sandbox.Plane(2, 2, 1, 1)
 const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
+planeShader.setUniform('uTexture', jellyfish.texture, 'tex')
 const planeMesh = new Sandbox.Mesh(plane, planeShader)
 volume.add(planeMesh)
 
@@ -39,9 +42,9 @@ trianglePositions.push(
 const triangle = new Sandbox.Geometry(trianglePositions)
 const triangleUVs = []
 triangleUVs.push(
-	0, 0,
-	1, 0,
-	0.5, 1
+	0, (1 - Math.sqrt(0.75)) / 2,
+	1, (1 - Math.sqrt(0.75)) / 2,
+	0.5, ((1 - Math.sqrt(0.75)) / 2) + Math.sqrt(0.75)
 )
 triangle.setAttribute('aUV', new Float32Array(triangleUVs), 2)
 const triangleMesh = new Sandbox.Mesh(triangle, planeShader)
@@ -122,14 +125,16 @@ buttons.forEach(button => {
 		}
 	})
 })
-
-const draw = () => {
+let then = 0
+const draw = (now) => {
 	renderer.render(volume, camera)
-	time += 0.1
-	translateX.value = Math.cos(time/4) * 5
- 	camera.position.x = Math.cos(time/4) * 5
- 	translateY.value = Math.sin(time/4) * 5
- 	camera.position.y = Math.sin(time/4) * 5
+	now *= 0.001
+	time += now - then
+	/*translateX.value = Math.cos(time) * 5
+ 	camera.position.x = Math.cos(time) * 5
+ 	translateY.value = Math.sin(time) * 5
+ 	camera.position.y = Math.sin(time) * 5*/
+ 	then = now
 	window.requestAnimationFrame(draw)
 }
 

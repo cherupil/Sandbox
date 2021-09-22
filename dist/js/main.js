@@ -3,7 +3,7 @@
   var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal * 0.5 + 0.5;\n	vUV = aUV;\n}";
 
   // src/shaders/plane/fragment.glsl
-  var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(vUV, 0.0, 1.0);\n}";
+  var fragment_default = "precision mediump float;\n\nuniform sampler2D uTexture;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 texture = texture2D(uTexture, vUV);\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	gl_FragColor = texture;\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -14,6 +14,7 @@
       this.resize = this.resize.bind(this);
       this.render = this.render.bind(this);
       this.pixelRatio = 2;
+      this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     }
     setPixelRatio(ratio) {
       this.pixelRatio = ratio;
@@ -78,6 +79,8 @@
               case "mat4":
                 this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value);
                 break;
+              case "tex":
+                this.gl.uniform1i(object.shader.uniforms[uniform].location, 0);
               default:
                 break;
             }
@@ -816,9 +819,9 @@
       const uvs = [];
       for (let i = 0; i < positions.length; i += 9) {
         if (i === 27) {
-          uvs.push(1, 0, 0.5, 1, 0, 0);
+          uvs.push(1, (1 - Math.sqrt(0.75)) / 2, 0.5, (1 - Math.sqrt(0.75)) / 2 + Math.sqrt(0.75), 0, (1 - Math.sqrt(0.75)) / 2);
         } else {
-          uvs.push(0, 0, 1, 0, 0.5, 1);
+          uvs.push(0, (1 - Math.sqrt(0.75)) / 2, 1, (1 - Math.sqrt(0.75)) / 2, 0.5, (1 - Math.sqrt(0.75)) / 2 + Math.sqrt(0.75));
         }
       }
       this.setAttribute("aUV", new Float32Array(uvs), 2);
@@ -1019,6 +1022,26 @@
     }
   };
 
+  // src/js/modules/Texture.js
+  var Texture = class {
+    constructor(gl, path) {
+      this.gl = gl;
+      this.texture = this.gl.createTexture();
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+      this.image = new Image();
+      this.image.addEventListener("load", this.attachImage.bind(this));
+      this.image.src = path;
+    }
+    attachImage() {
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.image);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+    }
+  };
+
   // src/js/modules/Sandbox.js
   var Sandbox = class {
     static createColor(r, g, b) {
@@ -1041,15 +1064,17 @@
   Sandbox.Cube = Cube;
   Sandbox.Sphere = Sphere;
   Sandbox.Program = Program;
+  Sandbox.Texture = Texture;
 
   // src/js/main.js
   var aspectRatio = window.innerWidth / window.innerHeight;
   var canvas = document.getElementById("webgl");
   var renderer = new Sandbox.Renderer(canvas);
-  renderer.setPixelRatio(1);
+  var jellyfish = new Sandbox.Texture(renderer.gl, "./img/jellyfish.jpg");
   var volume = new Sandbox.Volume();
   var plane = new Sandbox.Plane(2, 2, 1, 1);
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  planeShader.setUniform("uTexture", jellyfish.texture, "tex");
   var planeMesh = new Sandbox.Mesh(plane, planeShader);
   volume.add(planeMesh);
   planeMesh.setPosition(-3, 1.5, 0);
@@ -1063,7 +1088,7 @@
   trianglePositions.push(-triangleSize / 2, -(triangleSize * Math.sqrt(3)) / 6, 0, triangleSize / 2, -(triangleSize * Math.sqrt(3)) / 6, 0, 0, triangleSize * Math.sqrt(3) / 3, 0);
   var triangle = new Sandbox.Geometry(trianglePositions);
   var triangleUVs = [];
-  triangleUVs.push(0, 0, 1, 0, 0.5, 1);
+  triangleUVs.push(0, (1 - Math.sqrt(0.75)) / 2, 1, (1 - Math.sqrt(0.75)) / 2, 0.5, (1 - Math.sqrt(0.75)) / 2 + Math.sqrt(0.75));
   triangle.setAttribute("aUV", new Float32Array(triangleUVs), 2);
   var triangleMesh = new Sandbox.Mesh(triangle, planeShader);
   volume.add(triangleMesh);
@@ -1122,13 +1147,12 @@
       }
     });
   });
-  var draw = () => {
+  var then = 0;
+  var draw = (now) => {
     renderer.render(volume, camera);
-    time += 0.1;
-    translateX.value = Math.cos(time / 4) * 5;
-    camera.position.x = Math.cos(time / 4) * 5;
-    translateY.value = Math.sin(time / 4) * 5;
-    camera.position.y = Math.sin(time / 4) * 5;
+    now *= 1e-3;
+    time += now - then;
+    then = now;
     window.requestAnimationFrame(draw);
   };
   window.addEventListener("resize", () => {

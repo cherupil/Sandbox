@@ -7,6 +7,7 @@ export default class Renderer {
 		this.resize = this.resize.bind(this)
 		this.render = this.render.bind(this)
 		this.pixelRatio = 2.0
+		this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true)
 	}
 
 	setPixelRatio(ratio) {
@@ -85,6 +86,8 @@ export default class Renderer {
 						case 'mat4':
 							this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value)
 							break
+						case 'tex':
+							this.gl.uniform1i(object.shader.uniforms[uniform].location, 0)
 						default:
 							break
 					}

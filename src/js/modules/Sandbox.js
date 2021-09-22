@@ -10,6 +10,7 @@ import Tetrahedron from './Tetrahedron.js'
 import Cube from './Cube.js'
 import Sphere from './Sphere.js'
 import Program from './Program.js'
+import Texture from './Texture.js'
 
 export default class Sandbox {
 	static createColor(r, g, b) {
@@ -33,4 +34,4 @@ Sandbox.Tetrahedron = Tetrahedron
 Sandbox.Cube = Cube
 Sandbox.Sphere = Sphere
 Sandbox.Program = Program
-
+Sandbox.Texture = Texture
