@@ -66,6 +66,7 @@ triangleMesh.setPosition(3, 1.125, 0)*/
 const cube = new Sandbox.Sphere(1, 64)
 const cubeMesh = new Sandbox.Mesh(cube, planeShader)
 volume.add(cubeMesh)
+cubeMesh.setScale(1, 0.5, 1)
 
 //cubeMesh.setPosition(-1.5, 0, 0)
 
@@ -150,17 +151,18 @@ const draw = (now) => {
 	renderer.render(volume, camera)
 	now *= 0.001
 	time += now - then
-	translateX.value = Math.cos(time)
+	/*translateX.value = Math.cos(time)
  	camera.position.x = Math.cos(time)
  	translateY.value = Math.sin(time)
- 	camera.position.y = Math.sin(time)
- 	planeShader.uniforms.uLightDirection.value = Vector.normalize([Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2])
+ 	camera.position.y = Math.sin(time)*/
+ 	//planeShader.uniforms.uLightDirection.value = Vector.normalize([Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2])
+ 	planeShader.uniforms.uLightDirection.value = Vector.normalize([0.5, 0.7, 1])
  	//console.log(planeShader.uniforms.uLightDirection)
- 	//cubeMesh.setRotationY(time*100)
- 	lightX.value = Math.sin(time * 3) * 2
- 	lightY.value = Math.cos(time * 3) * 2
- 	lightZ.value = Math.sin(time * 2) * 2
- 	sphereMesh.setPosition(Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2)
+ 	cubeMesh.setRotationY(time*100)
+ 	lightX.value = Vector.normalize([0.5, 0.7, 1])[0]
+ 	lightY.value = Vector.normalize([0.5, 0.7, 1])[1]
+ 	lightZ.value = Vector.normalize([0.5, 0.7, 1])[2]
+ 	sphereMesh.setPosition(Vector.normalize([0.5, 0.7, 1])[0] * 2, Vector.normalize([0.5, 0.7, 1])[1] * 2, Vector.normalize([0.5, 0.7, 1])[2] * 2)
  	//sphereMesh.setRotationY(time*10)
  	//tetraMesh.setRotationY(time*10)
  	then = now

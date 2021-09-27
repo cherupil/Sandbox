@@ -67,8 +67,10 @@ export default class Renderer {
 			}
 
 			for (const uniform in object.shader.uniforms) {
-				if (uniform === 'uMatrix') {
+				if (uniform === 'uViewProjectionMatrix') {
 					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix)
+				} else if (uniform === 'uNormalMatrix') {
+					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.normalMatrix)
 				} else {
 					switch (object.shader.uniforms[uniform].type) {
 						case '1f':

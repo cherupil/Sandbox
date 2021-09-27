@@ -89,8 +89,13 @@ export default class Mesh {
 		this.localMatrix = matrix
 	}
 
+	_recalculateNormalMatrix() {
+		this.normalMatrix = Matrix.transpose(Matrix.inverse(this.localMatrix))
+	}
+
 	setProjectionMatrix(matrix) {
 		this._recalculateModelMatrix()
+		this._recalculateNormalMatrix()
 		this.projectionMatrix = Matrix.multiply(matrix, this.localMatrix)
 	}
 

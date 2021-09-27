@@ -1,12 +1,12 @@
 (() => {
   // src/shaders/sphere/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = mat3(uNormalMatrix) * aNormal;\n	vUV = aUV;\n}";
 
   // src/shaders/sphere/fragment.glsl
   var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n}";
 
   // src/shaders/plane/vertex.glsl
-  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = mat3(uNormalMatrix) * aNormal;\n	vUV = aUV;\n}";
 
   // src/shaders/plane/fragment.glsl
   var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uLightDirection;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec3 normal = normalize(vNormal);\n	vec4 texture = texture2D(uTexture, vUV);\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	vec3 color = vec3(0.2, 1.0, 0.2);\n	float light = dot(normal, uLightDirection);\n	gl_FragColor = vec4(color, 1.0);\n	gl_FragColor.rgb *= light;\n}";
@@ -100,8 +100,10 @@
           lastBuffer = object.geometry.attributes;
         }
         for (const uniform in object.shader.uniforms) {
-          if (uniform === "uMatrix") {
+          if (uniform === "uViewProjectionMatrix") {
             this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix);
+          } else if (uniform === "uNormalMatrix") {
+            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.normalMatrix);
           } else {
             switch (object.shader.uniforms[uniform].type) {
               case "1f":
@@ -272,6 +274,26 @@
       result[14] = d * (tmp_18 * m12 + tmp_23 * m32 + tmp_15 * m02 - (tmp_22 * m32 + tmp_14 * m02 + tmp_19 * m12));
       result[15] = d * (tmp_22 * m22 + tmp_16 * m02 + tmp_21 * m12 - (tmp_20 * m12 + tmp_23 * m22 + tmp_17 * m02));
       return result;
+    }
+    static transpose(m) {
+      return [
+        m[0],
+        m[4],
+        m[8],
+        m[12],
+        m[1],
+        m[5],
+        m[9],
+        m[13],
+        m[2],
+        m[6],
+        m[10],
+        m[14],
+        m[3],
+        m[7],
+        m[11],
+        m[15]
+      ];
     }
     static translate(tx, ty, tz) {
       return [
@@ -704,8 +726,12 @@
       matrix = Matrix.multiply(matrix, scale);
       this.localMatrix = matrix;
     }
+    _recalculateNormalMatrix() {
+      this.normalMatrix = Matrix.transpose(Matrix.inverse(this.localMatrix));
+    }
     setProjectionMatrix(matrix) {
       this._recalculateModelMatrix();
+      this._recalculateNormalMatrix();
       this.projectionMatrix = Matrix.multiply(matrix, this.localMatrix);
     }
     setPosition(x, y, z) {
@@ -1011,8 +1037,13 @@
       this.id = programId++;
       this.program = this._createProgram(gl, vertexShader, fragmentShader);
       this.uniforms = {
-        uMatrix: {
-          name: "uMatrix",
+        uViewProjectionMatrix: {
+          name: "uViewProjectionMatrix",
+          value: null,
+          type: "mat4"
+        },
+        uNormalMatrix: {
+          name: "uNormalMatrix",
           value: null,
           type: "mat4"
         }
@@ -1115,6 +1146,7 @@
   var cube = new Sandbox.Sphere(1, 64);
   var cubeMesh = new Sandbox.Mesh(cube, planeShader);
   volume.add(cubeMesh);
+  cubeMesh.setScale(1, 0.5, 1);
   var sphere = new Sandbox.Sphere(0.25, 64);
   var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
@@ -1170,15 +1202,12 @@
     renderer.render(volume, camera);
     now *= 1e-3;
     time += now - then;
-    translateX.value = Math.cos(time);
-    camera.position.x = Math.cos(time);
-    translateY.value = Math.sin(time);
-    camera.position.y = Math.sin(time);
-    planeShader.uniforms.uLightDirection.value = Vector.normalize([Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2]);
-    lightX.value = Math.sin(time * 3) * 2;
-    lightY.value = Math.cos(time * 3) * 2;
-    lightZ.value = Math.sin(time * 2) * 2;
-    sphereMesh.setPosition(Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2);
+    planeShader.uniforms.uLightDirection.value = Vector.normalize([0.5, 0.7, 1]);
+    cubeMesh.setRotationY(time * 100);
+    lightX.value = Vector.normalize([0.5, 0.7, 1])[0];
+    lightY.value = Vector.normalize([0.5, 0.7, 1])[1];
+    lightZ.value = Vector.normalize([0.5, 0.7, 1])[2];
+    sphereMesh.setPosition(Vector.normalize([0.5, 0.7, 1])[0] * 2, Vector.normalize([0.5, 0.7, 1])[1] * 2, Vector.normalize([0.5, 0.7, 1])[2] * 2);
     then = now;
     window.requestAnimationFrame(draw);
   };

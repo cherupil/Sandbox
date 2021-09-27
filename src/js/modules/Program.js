@@ -9,8 +9,13 @@ export default class Program {
 		this.id = programId++
 		this.program = this._createProgram(gl, vertexShader, fragmentShader)
 		this.uniforms = {
-			uMatrix: {
-				name: 'uMatrix',
+			uViewProjectionMatrix: {
+				name: 'uViewProjectionMatrix',
+				value: null,
+				type: 'mat4'
+			},
+			uNormalMatrix: {
+				name: 'uNormalMatrix',
 				value: null,
 				type: 'mat4'
 			}
