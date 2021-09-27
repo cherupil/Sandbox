@@ -15,6 +15,7 @@ export default class Program {
 				type: 'mat4'
 			}
 		}
+		this.surfaceNormals = false
 	}
 
 	_createShader(gl, type, source) {

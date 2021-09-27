@@ -3,35 +3,45 @@ import sphereShaderFragment from '../shaders/sphere/fragment.glsl'
 import planeShaderVertex from '../shaders/plane/vertex.glsl'
 import planeShaderFragment from '../shaders/plane/fragment.glsl'
 
+import Vector from './modules/Vector.js'
+
 import Sandbox from './modules/Sandbox.js'
 
 let aspectRatio = window.innerWidth / window.innerHeight
 const canvas = document.getElementById('webgl')
 const renderer = new Sandbox.Renderer(canvas)
-//renderer.setPixelRatio(1)
+renderer.setPixelRatio(1)
 
 const jellyfish = new Sandbox.Texture(renderer.gl, './img/jellyfish.jpg')
 
 const volume = new Sandbox.Volume()
 
+const lightDirection = {
+	x: 0.00,
+	y: 0.00,
+	z: 0.00
+}
+
 //Plane
-const plane = new Sandbox.Plane(2, 2, 1, 1)
+//const plane = new Sandbox.Plane(2, 2, 1, 1)
 const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
+planeShader.surfaceNormals = true
 planeShader.setUniform('uTexture', jellyfish.texture, 'tex')
-const planeMesh = new Sandbox.Mesh(plane, planeShader)
+planeShader.setUniform('uLightDirection', [lightDirection.x, lightDirection.y, lightDirection.z], '3f')
+/*const planeMesh = new Sandbox.Mesh(plane, planeShader)
 volume.add(planeMesh)
 
-planeMesh.setPosition(-3, 1.5, 0)
+planeMesh.setPosition(-3, 1.5, 0)*/
 
 //Circle
-const circle = new Sandbox.Circle(1, 64)
+/*const circle = new Sandbox.Circle(1, 64)
 const circleMesh = new Sandbox.Mesh(circle, planeShader)
 volume.add(circleMesh)
 
-circleMesh.setPosition(0, 1.5, 0)
+circleMesh.setPosition(0, 1.5, 0)*/
 
 //Triangle
-const triangleSize = 2.25
+/*const triangleSize = 2.25
 const triangleHeight = (Math.sqrt(3) / 2) * triangleSize
 const trianglePositions = []
 trianglePositions.push(
@@ -50,28 +60,28 @@ triangle.setAttribute('aUV', new Float32Array(triangleUVs), 2)
 const triangleMesh = new Sandbox.Mesh(triangle, planeShader)
 volume.add(triangleMesh)
 
-triangleMesh.setPosition(3, 1.125, 0)
+triangleMesh.setPosition(3, 1.125, 0)*/
 
 //Cube
-const cube = new Sandbox.Cube(2, 2, 2, 8, 8, 8)
+const cube = new Sandbox.Sphere(1, 64)
 const cubeMesh = new Sandbox.Mesh(cube, planeShader)
 volume.add(cubeMesh)
 
-cubeMesh.setPosition(-3, -1.5, -1)
+//cubeMesh.setPosition(-1.5, 0, 0)
 
 //Sphere
-const sphere = new Sandbox.Sphere(1, 64)
-const sphereMesh = new Sandbox.Mesh(sphere, planeShader)
+const sphere = new Sandbox.Sphere(0.25, 64)
+const sphereShader = new Sandbox.Program(renderer.gl, sphereShaderVertex, sphereShaderFragment)
+const sphereMesh = new Sandbox.Mesh(sphere, sphereShader)
 volume.add(sphereMesh)
 
-sphereMesh.setPosition(0, -1.5, -1)
 
 //Sphere
-const tetra = new Sandbox.Tetrahedron(2.25)
+/*const tetra = new Sandbox.Tetrahedron(2.25)
 const tetraMesh = new Sandbox.Mesh(tetra, planeShader)
 volume.add(tetraMesh)
 
-tetraMesh.setPosition(3, -1.875, -1)
+tetraMesh.setPosition(3, -1.875, -1)*/
 
 //Set Viewport
 const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
@@ -95,6 +105,22 @@ translateY.addEventListener('input', event => {
 	camera.position.y = event.target.value
 })
 
+const lightX = document.getElementById('lightX')
+const lightY = document.getElementById('lightY')
+const lightZ = document.getElementById('lightZ')
+
+lightX.addEventListener('input', event => {
+	lightDirection.x = event.target.value
+})
+
+lightY.addEventListener('input', event => {
+	lightDirection.y = event.target.value
+})
+
+lightZ.addEventListener('input', event => {
+	lightDirection.z = event.target.value
+})
+
 const buttons = document.querySelectorAll('button')
 
 buttons.forEach(button => {
@@ -102,38 +128,41 @@ buttons.forEach(button => {
 		buttons.forEach(item => item.classList.remove('active'))
 		button.classList.add('active')
 		switch (button.id) {
-			case 'plane':
-				camera.lookAt(planeMesh)
-				break
-			case 'circle':
-				camera.lookAt(circleMesh)
-				break
-			case 'triangle':
-				camera.lookAt(triangleMesh)
-				break
-			case 'cube':
-				camera.lookAt(cubeMesh)
+			case 'none':
+				camera.lookAtEnabled = false
 				break
 			case 'sphere':
-				camera.lookAt(sphereMesh)
+				camera.lookAt(cubeMesh)
 				break
-			case 'tetra':
-				camera.lookAt(tetraMesh)
+			case 'light':
+				camera.lookAt(sphereMesh)
 				break
 			default:
 				break
 		}
 	})
 })
+
+console.log(cubeMesh)
+
 let then = 0
 const draw = (now) => {
 	renderer.render(volume, camera)
 	now *= 0.001
 	time += now - then
-	/*translateX.value = Math.cos(time) * 5
- 	camera.position.x = Math.cos(time) * 5
- 	translateY.value = Math.sin(time) * 5
- 	camera.position.y = Math.sin(time) * 5*/
+	translateX.value = Math.cos(time)
+ 	camera.position.x = Math.cos(time)
+ 	translateY.value = Math.sin(time)
+ 	camera.position.y = Math.sin(time)
+ 	planeShader.uniforms.uLightDirection.value = Vector.normalize([Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2])
+ 	//console.log(planeShader.uniforms.uLightDirection)
+ 	//cubeMesh.setRotationY(time*100)
+ 	lightX.value = Math.sin(time * 3) * 2
+ 	lightY.value = Math.cos(time * 3) * 2
+ 	lightZ.value = Math.sin(time * 2) * 2
+ 	sphereMesh.setPosition(Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2)
+ 	//sphereMesh.setRotationY(time*10)
+ 	//tetraMesh.setRotationY(time*10)
  	then = now
 	window.requestAnimationFrame(draw)
 }
@@ -182,8 +211,14 @@ const removeDrag = () => {
 	document.onmousemove = null
 }
 
+const resetButton = document.querySelector('button')
+
 window.setTimeout(() => {
 	controls.classList.add('active')
 	translateX.classList.add('active')
  	translateY.classList.add('active')
+ 	lightX.classList.add('active')
+ 	lightY.classList.add('active')
+ 	lightZ.classList.add('active')
+ 	resetButton.classList.add('active')
 }, 500)

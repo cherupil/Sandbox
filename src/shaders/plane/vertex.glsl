@@ -11,6 +11,6 @@ varying vec2 vUV;
 void main() {
 	vec4 position = uMatrix * aPosition;
 	gl_Position = position;
-	vNormal = aNormal * 0.5 + 0.5;
+	vNormal = aNormal;
 	vUV = aUV;
 }

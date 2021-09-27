@@ -1,9 +1,49 @@
 (() => {
+  // src/shaders/sphere/vertex.glsl
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+
+  // src/shaders/sphere/fragment.glsl
+  var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n}";
+
   // src/shaders/plane/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal * 0.5 + 0.5;\n	vUV = aUV;\n}";
+  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
 
   // src/shaders/plane/fragment.glsl
-  var fragment_default = "precision mediump float;\n\nuniform sampler2D uTexture;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 texture = texture2D(uTexture, vUV);\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	gl_FragColor = texture;\n}";
+  var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uLightDirection;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec3 normal = normalize(vNormal);\n	vec4 texture = texture2D(uTexture, vUV);\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	vec3 color = vec3(0.2, 1.0, 0.2);\n	float light = dot(normal, uLightDirection);\n	gl_FragColor = vec4(color, 1.0);\n	gl_FragColor.rgb *= light;\n}";
+
+  // src/js/modules/Vector.js
+  var Vector = class {
+    static cross(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+      ];
+    }
+    static subtract(a, b) {
+      return [
+        a[0] - b[0],
+        a[1] - b[1],
+        a[2] - b[2]
+      ];
+    }
+    static normalize(v) {
+      const magnitude = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2);
+      if (magnitude > 1e-5) {
+        return [
+          v[0] / magnitude,
+          v[1] / magnitude,
+          v[2] / magnitude
+        ];
+      } else {
+        return [
+          0,
+          0,
+          0
+        ];
+      }
+    }
+  };
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -71,7 +111,7 @@
                 this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1]);
                 break;
               case "3f":
-                this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1], object.shader.uniforms[uniform].value[2]);
+                this.gl.uniform3f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1], object.shader.uniforms[uniform].value[2]);
                 break;
               case "mat3":
                 this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value);
@@ -90,40 +130,6 @@
         const vertexOffset = 0;
         const count = object.geometry.attributes.aPosition.count;
         this.gl.drawArrays(primitiveType, vertexOffset, count);
-      }
-    }
-  };
-
-  // src/js/modules/Vector.js
-  var Vector = class {
-    static cross(a, b) {
-      return [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0]
-      ];
-    }
-    static subtract(a, b) {
-      return [
-        a[0] - b[0],
-        a[1] - b[1],
-        a[2] - b[2]
-      ];
-    }
-    static normalize(v) {
-      const magnitude = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2);
-      if (magnitude > 1e-5) {
-        return [
-          v[0] / magnitude,
-          v[1] / magnitude,
-          v[2] / magnitude
-        ];
-      } else {
-        return [
-          0,
-          0,
-          0
-        ];
       }
     }
   };
@@ -643,6 +649,7 @@
       this._setAttributeData();
       this._setUniformData();
       this._setDrawMode();
+      this._setSurfaceNormals();
     }
     _setAttributeData() {
       for (const attribute in this.geometry.attributes) {
@@ -661,6 +668,27 @@
     }
     _setDrawMode() {
       this.drawMode = this.geometry.type ?? "TRIANGLES";
+    }
+    _setSurfaceNormals() {
+      if (this.shader.surfaceNormals) {
+        const surfaceNormals = [];
+        for (let i = 0; i < this.geometry.attributes.aNormal.data.length; i += 9) {
+          const p1 = [this.geometry.attributes.aNormal.data[i], this.geometry.attributes.aNormal.data[i + 1], this.geometry.attributes.aNormal.data[i + 2]];
+          const p2 = [this.geometry.attributes.aNormal.data[i + 3], this.geometry.attributes.aNormal.data[i + 4], this.geometry.attributes.aNormal.data[i + 5]];
+          const p3 = [this.geometry.attributes.aNormal.data[i + 6], this.geometry.attributes.aNormal.data[i + 7], this.geometry.attributes.aNormal.data[i + 8]];
+          const u = Vector.subtract(p2, p1);
+          const v = Vector.subtract(p3, p1);
+          const x = u[1] * v[2] - u[2] * v[1];
+          const y = u[2] * v[0] - u[0] * v[2];
+          const z = u[0] * v[1] - u[1] * v[0];
+          const normals = Vector.normalize([x, y, z]);
+          surfaceNormals.push(normals[0], normals[1], normals[2]);
+          surfaceNormals.push(normals[0], normals[1], normals[2]);
+          surfaceNormals.push(normals[0], normals[1], normals[2]);
+        }
+        this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes.aNormal.buffer);
+        this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER, new Float32Array(surfaceNormals), this.shader.gl.STATIC_DRAW);
+      }
     }
     _recalculateModelMatrix() {
       const identity = Matrix.identity();
@@ -989,6 +1017,7 @@
           type: "mat4"
         }
       };
+      this.surfaceNormals = false;
     }
     _createShader(gl, type, source) {
       const shader = gl.createShader(type);
@@ -1039,6 +1068,7 @@
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
     }
   };
 
@@ -1070,41 +1100,25 @@
   var aspectRatio = window.innerWidth / window.innerHeight;
   var canvas = document.getElementById("webgl");
   var renderer = new Sandbox.Renderer(canvas);
+  renderer.setPixelRatio(1);
   var jellyfish = new Sandbox.Texture(renderer.gl, "./img/jellyfish.jpg");
   var volume = new Sandbox.Volume();
-  var plane = new Sandbox.Plane(2, 2, 1, 1);
-  var planeShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  var lightDirection = {
+    x: 0,
+    y: 0,
+    z: 0
+  };
+  var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
+  planeShader.surfaceNormals = true;
   planeShader.setUniform("uTexture", jellyfish.texture, "tex");
-  var planeMesh = new Sandbox.Mesh(plane, planeShader);
-  volume.add(planeMesh);
-  planeMesh.setPosition(-3, 1.5, 0);
-  var circle = new Sandbox.Circle(1, 64);
-  var circleMesh = new Sandbox.Mesh(circle, planeShader);
-  volume.add(circleMesh);
-  circleMesh.setPosition(0, 1.5, 0);
-  var triangleSize = 2.25;
-  var triangleHeight = Math.sqrt(3) / 2 * triangleSize;
-  var trianglePositions = [];
-  trianglePositions.push(-triangleSize / 2, -(triangleSize * Math.sqrt(3)) / 6, 0, triangleSize / 2, -(triangleSize * Math.sqrt(3)) / 6, 0, 0, triangleSize * Math.sqrt(3) / 3, 0);
-  var triangle = new Sandbox.Geometry(trianglePositions);
-  var triangleUVs = [];
-  triangleUVs.push(0, (1 - Math.sqrt(0.75)) / 2, 1, (1 - Math.sqrt(0.75)) / 2, 0.5, (1 - Math.sqrt(0.75)) / 2 + Math.sqrt(0.75));
-  triangle.setAttribute("aUV", new Float32Array(triangleUVs), 2);
-  var triangleMesh = new Sandbox.Mesh(triangle, planeShader);
-  volume.add(triangleMesh);
-  triangleMesh.setPosition(3, 1.125, 0);
-  var cube = new Sandbox.Cube(2, 2, 2, 8, 8, 8);
+  planeShader.setUniform("uLightDirection", [lightDirection.x, lightDirection.y, lightDirection.z], "3f");
+  var cube = new Sandbox.Sphere(1, 64);
   var cubeMesh = new Sandbox.Mesh(cube, planeShader);
   volume.add(cubeMesh);
-  cubeMesh.setPosition(-3, -1.5, -1);
-  var sphere = new Sandbox.Sphere(1, 64);
-  var sphereMesh = new Sandbox.Mesh(sphere, planeShader);
+  var sphere = new Sandbox.Sphere(0.25, 64);
+  var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
   volume.add(sphereMesh);
-  sphereMesh.setPosition(0, -1.5, -1);
-  var tetra = new Sandbox.Tetrahedron(2.25);
-  var tetraMesh = new Sandbox.Mesh(tetra, planeShader);
-  volume.add(tetraMesh);
-  tetraMesh.setPosition(3, -1.875, -1);
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 5;
   renderer.resize();
@@ -1118,40 +1132,53 @@
   translateY.addEventListener("input", (event) => {
     camera.position.y = event.target.value;
   });
+  var lightX = document.getElementById("lightX");
+  var lightY = document.getElementById("lightY");
+  var lightZ = document.getElementById("lightZ");
+  lightX.addEventListener("input", (event) => {
+    lightDirection.x = event.target.value;
+  });
+  lightY.addEventListener("input", (event) => {
+    lightDirection.y = event.target.value;
+  });
+  lightZ.addEventListener("input", (event) => {
+    lightDirection.z = event.target.value;
+  });
   var buttons = document.querySelectorAll("button");
   buttons.forEach((button) => {
     button.addEventListener("click", (event) => {
       buttons.forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
       switch (button.id) {
-        case "plane":
-          camera.lookAt(planeMesh);
-          break;
-        case "circle":
-          camera.lookAt(circleMesh);
-          break;
-        case "triangle":
-          camera.lookAt(triangleMesh);
-          break;
-        case "cube":
-          camera.lookAt(cubeMesh);
+        case "none":
+          camera.lookAtEnabled = false;
           break;
         case "sphere":
-          camera.lookAt(sphereMesh);
+          camera.lookAt(cubeMesh);
           break;
-        case "tetra":
-          camera.lookAt(tetraMesh);
+        case "light":
+          camera.lookAt(sphereMesh);
           break;
         default:
           break;
       }
     });
   });
+  console.log(cubeMesh);
   var then = 0;
   var draw = (now) => {
     renderer.render(volume, camera);
     now *= 1e-3;
     time += now - then;
+    translateX.value = Math.cos(time);
+    camera.position.x = Math.cos(time);
+    translateY.value = Math.sin(time);
+    camera.position.y = Math.sin(time);
+    planeShader.uniforms.uLightDirection.value = Vector.normalize([Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2]);
+    lightX.value = Math.sin(time * 3) * 2;
+    lightY.value = Math.cos(time * 3) * 2;
+    lightZ.value = Math.sin(time * 2) * 2;
+    sphereMesh.setPosition(Math.sin(time * 3) * 2, Math.cos(time * 3) * 2, Math.sin(time * 2) * 2);
     then = now;
     window.requestAnimationFrame(draw);
   };
@@ -1192,9 +1219,14 @@
     document.onmouseup = null;
     document.onmousemove = null;
   };
+  var resetButton = document.querySelector("button");
   window.setTimeout(() => {
     controls.classList.add("active");
     translateX.classList.add("active");
     translateY.classList.add("active");
+    lightX.classList.add("active");
+    lightY.classList.add("active");
+    lightZ.classList.add("active");
+    resetButton.classList.add("active");
   }, 500);
 })();

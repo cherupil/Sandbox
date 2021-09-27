@@ -35,7 +35,7 @@
 }
 
 main {
-	background-color: var(--blue-500);
+	background-color: var(--grey-300);
 	height: 100vh;
 	width: 100vw;
 }
@@ -52,16 +52,17 @@ canvas#webgl {
 input[type="range"] {
 	background-color: transparent;
 	padding-bottom: 0px;
-	padding-right: 16px;
+	padding-right: 0;
 	padding-top: 8px;
 	-webkit-appearance: none;
 	width: 100%;
 }
 
 .controls {
+	align-items: flex-start;
 	-webkit-backdrop-filter: saturate(180%) blur(20px);
 	background-color: rgba(127, 127, 127, 0.125);
-	border: 2px solid rgba(127, 127, 127, 0.25);
+	border: 4px solid rgba(255, 255, 255, 0.125);
 	border-radius: 24px;
 	bottom: 64px;
 	//bottom: 25%;
@@ -72,7 +73,7 @@ input[type="range"] {
 	//flex-direction: column;
 	left: 80px;
 	//left: 50%;
-	padding: 24px 16px 0px 32px;
+	padding: 36px 32px 8px 32px;
 	position: fixed;
 	transform: translateY(calc(100% + 64px));
 	z-index: 3;
@@ -91,15 +92,30 @@ input[type="range"] {
 }
 
 .sliders h3 {
-	color: white;
+	color: black;
 	font-family: system-ui;
 	font-size: 20px;
-	font-weight: 400;
-	letter-spacing: 4px;
-	margin-bottom: 20px;
-	opacity: 0.75;
+	font-weight: 700;
+	//letter-spacing: 4px;
+	margin-bottom: 24px;
+	position: relative;
 	text-align: center;
-	text-transform: uppercase;
+	//text-transform: uppercase;
+}
+
+.sliders h3:before {
+	background-color: white;
+	border-radius: 20px;
+	content: '';
+	display: block;
+	height: 40px;
+	left: 50%;
+	opacity: 0.5;
+	position: absolute;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 120px;
+	z-index: -1;
 }
 
 .sliders .input {
@@ -128,7 +144,7 @@ input[type="range"] {
 	justify-content: space-between;
 	margin-bottom: 16px;
 	margin-left: 64px;
-	margin-right: 16px;
+	margin-right: 64px;
 	position: relative;
 }
 
@@ -137,23 +153,49 @@ input[type="range"] {
 	content: '';
 	display: block;
 	height: calc(100% - 20px);
-	left: -40px;
+	left: -32px;
 	position: absolute;
-	top: 8px;
+	top: 4px;
+	width: 1px;
+}
+
+.buttons:after {
+	background-color: rgba(255, 255, 255, 0.25);
+	content: '';
+	display: block;
+	height: calc(100% - 20px);
+	right: -32px;
+	position: absolute;
+	top: 4px;
 	width: 1px;
 }
 
 .buttons h3 {
-	color: white;
+	color: black;
 	font-family: system-ui;
 	font-size: 20px;
-	font-weight: 400;
-	letter-spacing: 4px;
-	margin-bottom: 20px;
-	opacity: 0.75;
+	font-weight: 700;
+	//letter-spacing: 4px;
+	margin-bottom: 24px;
+	position: relative;
 	text-align: center;
-	text-transform: uppercase;
+	//text-transform: uppercase;
 	width: 100%;
+}
+
+.buttons h3:before {
+	background-color: white;
+	border-radius: 20px;
+	content: '';
+	display: block;
+	height: 40px;
+	left: 50%;
+	opacity: 0.5;
+	position: absolute;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 100px;
+	z-index: -1;
 }
 
 button {
@@ -168,11 +210,11 @@ button {
 	font-weight: 600;
 	height: 48px;
 	letter-spacing: 2px;
-	margin-bottom: 12px;
+	margin-bottom: 10px;
 	text-transform: uppercase;
 	transition: background-color 200ms ease, border 200ms ease, box-shadow 200ms ease;
 	-webkit-appearance: none;
-	width: calc(33.33333% - 8px);
+	width: calc(100%);
 }
 
 button:hover {
@@ -180,6 +222,7 @@ button:hover {
 }
 
 button.active {
+	background-color: rgba(31, 31, 31, 1);
 	border: 2px solid rgba(255, 255, 255, 1);
 	box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
 }
@@ -215,6 +258,7 @@ input[type="range"].active::-webkit-slider-thumb {
 }
 
 input[type="range"]:active::-webkit-slider-thumb {
+	background-color: rgba(31, 31, 31, 1);
 	border: 2px solid rgba(255, 255, 255, 1);
 	box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
 }

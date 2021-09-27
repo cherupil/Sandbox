@@ -1,4 +1,5 @@
 import Matrix from './Matrix.js'
+import Vector from './Vector.js'
 
 export default class Mesh {
 	constructor(geometry, shader) {
@@ -23,6 +24,7 @@ export default class Mesh {
 		this._setAttributeData()
 		this._setUniformData()
 		this._setDrawMode()
+		this._setSurfaceNormals()
 	}
 
 	_setAttributeData() {
@@ -44,6 +46,32 @@ export default class Mesh {
 
 	_setDrawMode() {
 		this.drawMode = this.geometry.type ?? 'TRIANGLES'
+    }
+
+    _setSurfaceNormals() {
+    	if (this.shader.surfaceNormals) {
+    		const surfaceNormals = []
+    		for (let i = 0; i < this.geometry.attributes.aNormal.data.length; i+=9) {
+    			const p1 = [this.geometry.attributes.aNormal.data[i], this.geometry.attributes.aNormal.data[i+1], this.geometry.attributes.aNormal.data[i+2]]
+    			const p2 = [this.geometry.attributes.aNormal.data[i+3], this.geometry.attributes.aNormal.data[i+4], this.geometry.attributes.aNormal.data[i+5]]
+    			const p3 = [this.geometry.attributes.aNormal.data[i+6], this.geometry.attributes.aNormal.data[i+7], this.geometry.attributes.aNormal.data[i+8]]
+    			
+    			const u = Vector.subtract(p2, p1)
+    			const v = Vector.subtract(p3, p1)
+
+    			const x = (u[1] * v[2]) - (u[2] * v[1])
+    			const y = (u[2] * v[0]) - (u[0] * v[2])
+    			const z = (u[0] * v[1]) - (u[1] * v[0])
+
+    			const normals = Vector.normalize([x, y, z])
+
+    			surfaceNormals.push(normals[0], normals[1], normals[2])
+    			surfaceNormals.push(normals[0], normals[1], normals[2])
+    			surfaceNormals.push(normals[0], normals[1], normals[2])
+    		}
+    		this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes.aNormal.buffer)
+			this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER, new Float32Array(surfaceNormals), this.shader.gl.STATIC_DRAW)
+    	}
     }
 
 	_recalculateModelMatrix() {
