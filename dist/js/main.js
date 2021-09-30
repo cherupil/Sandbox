@@ -6,44 +6,10 @@
   var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n}";
 
   // src/shaders/plane/vertex.glsl
-  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = mat3(uNormalMatrix) * aNormal;\n	vUV = aUV;\n}";
+  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform vec3 uPointLight;\nuniform vec3 uCameraPosition;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\nvarying vec3 vSurfaceToLight;\nvarying vec3 vSurfaceToCamera;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	vec3 surfacePosition = (uLocalMatrix * aPosition).xyz;\n	gl_Position = position;\n	vNormal = mat3(uNormalMatrix) * aNormal;\n	vUV = aUV;\n	vSurfaceToLight = uPointLight - surfacePosition;\n	vSurfaceToCamera = uCameraPosition - surfacePosition;\n}";
 
   // src/shaders/plane/fragment.glsl
-  var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uLightDirection;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec3 normal = normalize(vNormal);\n	vec4 texture = texture2D(uTexture, vUV);\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	vec3 color = vec3(0.2, 1.0, 0.2);\n	float light = dot(normal, uLightDirection);\n	gl_FragColor = vec4(color, 1.0);\n	gl_FragColor.rgb *= light;\n}";
-
-  // src/js/modules/Vector.js
-  var Vector = class {
-    static cross(a, b) {
-      return [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0]
-      ];
-    }
-    static subtract(a, b) {
-      return [
-        a[0] - b[0],
-        a[1] - b[1],
-        a[2] - b[2]
-      ];
-    }
-    static normalize(v) {
-      const magnitude = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2);
-      if (magnitude > 1e-5) {
-        return [
-          v[0] / magnitude,
-          v[1] / magnitude,
-          v[2] / magnitude
-        ];
-      } else {
-        return [
-          0,
-          0,
-          0
-        ];
-      }
-    }
-  };
+  var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\nvarying vec3 vSurfaceToLight;\nvarying vec3 vSurfaceToCamera;\n\nvoid main() {\n	vec3 normal = normalize(vNormal);\n	vec3 surfaceToLight = normalize(vSurfaceToLight);\n	vec3 surfaceToCamera = normalize(vSurfaceToCamera);\n	vec3 halfVector = normalize(vSurfaceToLight + vSurfaceToCamera);\n	vec4 texture = texture2D(uTexture, vUV);\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	float light = dot(normal, surfaceToLight);\n	float specular = 0.0;\n	if (light > 0.0) {\n		specular = pow(dot(normal, halfVector), 16.0);\n	}\n	gl_FragColor = texture;\n	gl_FragColor.rgb += gl_FragColor.rgb * ((light + 1.0) * 0.5);\n	gl_FragColor.rgb += specular;\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -104,6 +70,8 @@
             this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix);
           } else if (uniform === "uNormalMatrix") {
             this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.normalMatrix);
+          } else if (uniform === "uLocalMatrix") {
+            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.localMatrix);
           } else {
             switch (object.shader.uniforms[uniform].type) {
               case "1f":
@@ -122,7 +90,9 @@
                 this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value);
                 break;
               case "tex":
-                this.gl.uniform1i(object.shader.uniforms[uniform].location, 0);
+                this.gl.uniform1i(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value.id);
+                this.gl.activeTexture(this.gl.TEXTURE0 + object.shader.uniforms[uniform].value.id);
+                this.gl.bindTexture(this.gl.TEXTURE_2D, object.shader.uniforms[uniform].value.texture);
               default:
                 break;
             }
@@ -132,6 +102,40 @@
         const vertexOffset = 0;
         const count = object.geometry.attributes.aPosition.count;
         this.gl.drawArrays(primitiveType, vertexOffset, count);
+      }
+    }
+  };
+
+  // src/js/modules/Vector.js
+  var Vector = class {
+    static cross(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+      ];
+    }
+    static subtract(a, b) {
+      return [
+        a[0] - b[0],
+        a[1] - b[1],
+        a[2] - b[2]
+      ];
+    }
+    static normalize(v) {
+      const magnitude = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2);
+      if (magnitude > 1e-5) {
+        return [
+          v[0] / magnitude,
+          v[1] / magnitude,
+          v[2] / magnitude
+        ];
+      } else {
+        return [
+          0,
+          0,
+          0
+        ];
       }
     }
   };
@@ -1046,6 +1050,11 @@
           name: "uNormalMatrix",
           value: null,
           type: "mat4"
+        },
+        uLocalMatrix: {
+          name: "uLocalMatrix",
+          value: null,
+          type: "mat4"
         }
       };
       this.surfaceNormals = false;
@@ -1083,10 +1092,12 @@
   };
 
   // src/js/modules/Texture.js
+  var textureId = 0;
   var Texture = class {
     constructor(gl, path) {
       this.gl = gl;
       this.texture = this.gl.createTexture();
+      this.id = textureId++;
       this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
       this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
       this.image = new Image();
@@ -1100,6 +1111,24 @@
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+    }
+  };
+
+  // src/js/modules/Light.js
+  var Light = class {
+    constructor(type, vector) {
+      this.type = type;
+      if (this.type === "directional") {
+        this.direction = Vector.normalize([vector[0], vector[1], vector[2]]);
+      } else if (this.type === "point") {
+        this.position = [vector[0], vector[1], vector[2]];
+      }
+    }
+    setDirection(x, y, z) {
+      this.direction = Vector.normalize([x, y, z]);
+    }
+    setPosition(x, y, z) {
+      this.position = [x, y, z];
     }
   };
 
@@ -1126,27 +1155,34 @@
   Sandbox.Sphere = Sphere;
   Sandbox.Program = Program;
   Sandbox.Texture = Texture;
+  Sandbox.Light = Light;
 
   // src/js/main.js
   var aspectRatio = window.innerWidth / window.innerHeight;
   var canvas = document.getElementById("webgl");
   var renderer = new Sandbox.Renderer(canvas);
-  renderer.setPixelRatio(1);
   var jellyfish = new Sandbox.Texture(renderer.gl, "./img/jellyfish.jpg");
+  var danielle = new Sandbox.Texture(renderer.gl, "./img/danielle.jpg");
   var volume = new Sandbox.Volume();
-  var lightDirection = {
-    x: 0,
-    y: 0,
-    z: 0
-  };
+  var pointLight = new Sandbox.Light("point", [0, 0, 1.25]);
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
   planeShader.surfaceNormals = true;
-  planeShader.setUniform("uTexture", jellyfish.texture, "tex");
-  planeShader.setUniform("uLightDirection", [lightDirection.x, lightDirection.y, lightDirection.z], "3f");
-  var cube = new Sandbox.Sphere(1, 64);
+  planeShader.setUniform("uTexture", jellyfish, "tex");
+  planeShader.setUniform("uPointLight", pointLight.position, "3f");
+  planeShader.setUniform("uCameraPosition", [0, 0, 5]);
+  var planeShaderTwo = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
+  planeShaderTwo.surfaceNormals = true;
+  planeShaderTwo.setUniform("uTexture", danielle, "tex");
+  planeShaderTwo.setUniform("uPointLight", pointLight.position, "3f");
+  planeShaderTwo.setUniform("uCameraPosition", [0, 0, 5]);
+  var cube = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
   var cubeMesh = new Sandbox.Mesh(cube, planeShader);
   volume.add(cubeMesh);
-  cubeMesh.setScale(1, 0.5, 1);
+  cubeMesh.setPosition(-2, 0, -1);
+  var cubeTwo = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
+  var cubeMeshTwo = new Sandbox.Mesh(cubeTwo, planeShaderTwo);
+  volume.add(cubeMeshTwo);
+  cubeMeshTwo.setPosition(2, 0, -1);
   var sphere = new Sandbox.Sphere(0.25, 64);
   var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
@@ -1163,18 +1199,6 @@
   });
   translateY.addEventListener("input", (event) => {
     camera.position.y = event.target.value;
-  });
-  var lightX = document.getElementById("lightX");
-  var lightY = document.getElementById("lightY");
-  var lightZ = document.getElementById("lightZ");
-  lightX.addEventListener("input", (event) => {
-    lightDirection.x = event.target.value;
-  });
-  lightY.addEventListener("input", (event) => {
-    lightDirection.y = event.target.value;
-  });
-  lightZ.addEventListener("input", (event) => {
-    lightDirection.z = event.target.value;
   });
   var buttons = document.querySelectorAll("button");
   buttons.forEach((button) => {
@@ -1196,18 +1220,23 @@
       }
     });
   });
-  console.log(cubeMesh);
   var then = 0;
   var draw = (now) => {
     renderer.render(volume, camera);
     now *= 1e-3;
     time += now - then;
-    planeShader.uniforms.uLightDirection.value = Vector.normalize([0.5, 0.7, 1]);
-    cubeMesh.setRotationY(time * 100);
-    lightX.value = Vector.normalize([0.5, 0.7, 1])[0];
-    lightY.value = Vector.normalize([0.5, 0.7, 1])[1];
-    lightZ.value = Vector.normalize([0.5, 0.7, 1])[2];
-    sphereMesh.setPosition(Vector.normalize([0.5, 0.7, 1])[0] * 2, Vector.normalize([0.5, 0.7, 1])[1] * 2, Vector.normalize([0.5, 0.7, 1])[2] * 2);
+    translateX.value = Math.cos(time);
+    camera.position.x = Math.cos(time);
+    translateY.value = Math.sin(time);
+    camera.position.y = Math.sin(time);
+    pointLight.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3);
+    planeShader.uniforms.uPointLight.value = pointLight.position;
+    planeShaderTwo.uniforms.uPointLight.value = pointLight.position;
+    planeShader.uniforms.uCameraPosition.value = [camera.position.x, camera.position.y, camera.position.z];
+    planeShaderTwo.uniforms.uCameraPosition.value = [camera.position.x, camera.position.y, camera.position.z];
+    cubeMesh.setRotationY(time * 10);
+    cubeMeshTwo.setRotationY(time * 10);
+    sphereMesh.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3);
     then = now;
     window.requestAnimationFrame(draw);
   };
@@ -1251,11 +1280,6 @@
   var resetButton = document.querySelector("button");
   window.setTimeout(() => {
     controls.classList.add("active");
-    translateX.classList.add("active");
-    translateY.classList.add("active");
-    lightX.classList.add("active");
-    lightY.classList.add("active");
-    lightZ.classList.add("active");
     resetButton.classList.add("active");
   }, 500);
 })();

@@ -71,6 +71,8 @@ export default class Renderer {
 					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix)
 				} else if (uniform === 'uNormalMatrix') {
 					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.normalMatrix)
+				} else if (uniform === 'uLocalMatrix') {
+					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.localMatrix)
 				} else {
 					switch (object.shader.uniforms[uniform].type) {
 						case '1f':
@@ -89,7 +91,9 @@ export default class Renderer {
 							this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value)
 							break
 						case 'tex':
-							this.gl.uniform1i(object.shader.uniforms[uniform].location, 0)
+							this.gl.uniform1i(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value.id)
+							this.gl.activeTexture(this.gl.TEXTURE0 + object.shader.uniforms[uniform].value.id)
+							this.gl.bindTexture(this.gl.TEXTURE_2D, object.shader.uniforms[uniform].value.texture)
 						default:
 							break
 					}

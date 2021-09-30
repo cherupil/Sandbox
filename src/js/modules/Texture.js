@@ -1,7 +1,10 @@
+let textureId = 0
+
 export default class Texture {
 	constructor(gl, path) {
 		this.gl = gl
 		this.texture = this.gl.createTexture()
+		this.id = textureId++
 
 		this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture)
 		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE,

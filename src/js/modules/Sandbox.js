@@ -11,6 +11,7 @@ import Cube from './Cube.js'
 import Sphere from './Sphere.js'
 import Program from './Program.js'
 import Texture from './Texture.js'
+import Light from './Light.js'
 
 export default class Sandbox {
 	static createColor(r, g, b) {
@@ -35,3 +36,4 @@ Sandbox.Cube = Cube
 Sandbox.Sphere = Sphere
 Sandbox.Program = Program
 Sandbox.Texture = Texture
+Sandbox.Light = Light

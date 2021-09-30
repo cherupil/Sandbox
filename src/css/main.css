@@ -35,7 +35,8 @@
 }
 
 main {
-	background-color: var(--grey-300);
+	background-color: var(--grey-400);
+	//background-color: black;
 	height: 100vh;
 	width: 100vw;
 }
@@ -47,6 +48,40 @@ canvas#webgl {
 	top: 0;
 	width: 100vw;
 	z-index: 1;
+}
+
+.label {
+	align-items: flex-start;
+	-webkit-backdrop-filter: saturate(180%) blur(20px);
+	background-color: rgba(0, 0, 0, 0.5);
+	border: 4px solid rgba(255, 255, 255, 0.25);
+	border-radius: 16px;
+	bottom: 200px;
+	//bottom: 25%;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.25);
+	cursor: move;
+	display: flex;
+	//display: none;
+	//flex-direction: column;
+	left: 480px;
+	//left: 50%;
+	padding: 16px 24px 16px 24px;
+	position: fixed;
+	//transform: translateY(calc(100% + 64px));
+	z-index: 3;
+}
+
+.label-two {
+	left: 1000px;
+}
+
+.label h3 {
+	color: white;
+	font-family: system-ui;
+	font-size: 20px;
+	font-weight: 700;
+	position: relative;
+	text-align: center;
 }
 
 input[type="range"] {
@@ -80,7 +115,7 @@ input[type="range"] {
 }
 
 .controls.active {
-	transform: translateY(0);
+	//transform: translateY(0);
 	transition: transform 1200ms cubic-bezier(0.25, 0.5, 0, 1);
 }
 

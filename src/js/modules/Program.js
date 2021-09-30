@@ -18,6 +18,11 @@ export default class Program {
 				name: 'uNormalMatrix',
 				value: null,
 				type: 'mat4'
+			},
+			uLocalMatrix: {
+				name: 'uLocalMatrix',
+				value: null,
+				type: 'mat4'
 			}
 		}
 		this.surfaceNormals = false
