@@ -9,8 +9,9 @@ let aspectRatio = window.innerWidth / window.innerHeight
 const canvas = document.getElementById('webgl')
 const renderer = new Sandbox.Renderer(canvas)
 
-const jellyfish = new Sandbox.Texture(renderer.gl, './img/jellyfish.jpg')
-const danielle = new Sandbox.Texture(renderer.gl, './img/danielle.jpg')
+const jellyfish = new Sandbox.ImageTexture(renderer.gl, './img/jellyfish.jpg')
+//const danielle = new Sandbox.ImageTexture(renderer.gl, './img/danielle.jpg')
+const dataTex = new Sandbox.DataTexture(renderer.gl, 'luminance', 3, 2, [128, 64, 128, 0, 192, 0])
 
 const volume = new Sandbox.Volume()
 
@@ -30,7 +31,7 @@ planeShader.setUniform('uCameraPosition', [0, 0, 5])
 
 const planeShaderTwo = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
 planeShaderTwo.surfaceNormals = true
-planeShaderTwo.setUniform('uTexture', danielle, 'tex')
+planeShaderTwo.setUniform('uTexture', dataTex, 'tex')
 planeShaderTwo.setUniform('uPointLight', pointLight.position, '3f')
 planeShaderTwo.setUniform('uCameraPosition', [0, 0, 5])
 
@@ -46,6 +47,8 @@ const cubeMeshTwo = new Sandbox.Mesh(cubeTwo, planeShaderTwo)
 volume.add(cubeMeshTwo)
 
 cubeMeshTwo.setPosition(2, 0, -1)
+
+console.log(cubeMeshTwo)
 
 //Sphere
 const sphere = new Sandbox.Sphere(0.25, 64)

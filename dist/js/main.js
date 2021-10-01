@@ -21,6 +21,7 @@
       this.render = this.render.bind(this);
       this.pixelRatio = 2;
       this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+      this.gl.pixelStorei(this.gl.UNPACK_ALIGNMENT, 1);
     }
     setPixelRatio(ratio) {
       this.pixelRatio = ratio;
@@ -1093,7 +1094,7 @@
 
   // src/js/modules/Texture.js
   var textureId = 0;
-  var Texture = class {
+  var ImageTexture = class {
     constructor(gl, path) {
       this.gl = gl;
       this.texture = this.gl.createTexture();
@@ -1111,6 +1112,35 @@
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+    }
+  };
+  var DataTexture = class {
+    constructor(gl, format, width, height, data) {
+      this.gl = gl;
+      this.texture = this.gl.createTexture();
+      this.id = textureId++;
+      this.width = width;
+      this.height = height;
+      switch (format) {
+        case "rgba":
+          this.format = this.gl.RGBA;
+          break;
+        case "rgb":
+          this.format = this.gl.RGB;
+          break;
+        case "luminance_alpha":
+          this.format = this.gl.LUMINANCE_ALPHA;
+          break;
+        case "luminance":
+          this.format = this.gl.LUMINANCE;
+          break;
+      }
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.format, width, height, 0, this.format, this.gl.UNSIGNED_BYTE, new Uint8Array(data));
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
     }
   };
 
@@ -1154,15 +1184,16 @@
   Sandbox.Cube = Cube;
   Sandbox.Sphere = Sphere;
   Sandbox.Program = Program;
-  Sandbox.Texture = Texture;
+  Sandbox.ImageTexture = ImageTexture;
+  Sandbox.DataTexture = DataTexture;
   Sandbox.Light = Light;
 
   // src/js/main.js
   var aspectRatio = window.innerWidth / window.innerHeight;
   var canvas = document.getElementById("webgl");
   var renderer = new Sandbox.Renderer(canvas);
-  var jellyfish = new Sandbox.Texture(renderer.gl, "./img/jellyfish.jpg");
-  var danielle = new Sandbox.Texture(renderer.gl, "./img/danielle.jpg");
+  var jellyfish = new Sandbox.ImageTexture(renderer.gl, "./img/jellyfish.jpg");
+  var dataTex = new Sandbox.DataTexture(renderer.gl, "luminance", 3, 2, [128, 64, 128, 0, 192, 0]);
   var volume = new Sandbox.Volume();
   var pointLight = new Sandbox.Light("point", [0, 0, 1.25]);
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
@@ -1172,7 +1203,7 @@
   planeShader.setUniform("uCameraPosition", [0, 0, 5]);
   var planeShaderTwo = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
   planeShaderTwo.surfaceNormals = true;
-  planeShaderTwo.setUniform("uTexture", danielle, "tex");
+  planeShaderTwo.setUniform("uTexture", dataTex, "tex");
   planeShaderTwo.setUniform("uPointLight", pointLight.position, "3f");
   planeShaderTwo.setUniform("uCameraPosition", [0, 0, 5]);
   var cube = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
@@ -1183,6 +1214,7 @@
   var cubeMeshTwo = new Sandbox.Mesh(cubeTwo, planeShaderTwo);
   volume.add(cubeMeshTwo);
   cubeMeshTwo.setPosition(2, 0, -1);
+  console.log(cubeMeshTwo);
   var sphere = new Sandbox.Sphere(0.25, 64);
   var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);

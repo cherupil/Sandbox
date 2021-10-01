@@ -10,7 +10,7 @@ import Tetrahedron from './Tetrahedron.js'
 import Cube from './Cube.js'
 import Sphere from './Sphere.js'
 import Program from './Program.js'
-import Texture from './Texture.js'
+import { ImageTexture, DataTexture } from './Texture.js'
 import Light from './Light.js'
 
 export default class Sandbox {
@@ -35,5 +35,6 @@ Sandbox.Tetrahedron = Tetrahedron
 Sandbox.Cube = Cube
 Sandbox.Sphere = Sphere
 Sandbox.Program = Program
-Sandbox.Texture = Texture
+Sandbox.ImageTexture = ImageTexture
+Sandbox.DataTexture = DataTexture
 Sandbox.Light = Light
