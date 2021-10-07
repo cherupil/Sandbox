@@ -3,7 +3,8 @@ import Vector from './Vector.js'
 
 export default class Mesh {
 	constructor(geometry, shader) {
-		this.geometry = geometry
+		this.geometryID = geometry.id
+		this.geometryType = geometry.type
 		this.shader = shader
 		this.position = {
 			x: 0,
@@ -20,6 +21,25 @@ export default class Mesh {
 			y: 1,
 			z: 1
 		}
+		this.attributes = geometry.attributes
+		this.uniforms = {
+			uViewProjectionMatrix: {
+				name: 'uViewProjectionMatrix',
+				value: null,
+				type: 'mat4'
+			},
+			uNormalMatrix: {
+				name: 'uNormalMatrix',
+				value: null,
+				type: 'mat4'
+			},
+			uLocalMatrix: {
+				name: 'uLocalMatrix',
+				value: null,
+				type: 'mat4'
+			}
+		}
+		this.surfaceNormals = false
 		this.localMatrix = Matrix.identity()
 		this._setAttributeData()
 		this._setUniformData()
@@ -28,28 +48,26 @@ export default class Mesh {
 	}
 
 	_setAttributeData() {
-		for (const attribute in this.geometry.attributes) {
-			this.geometry.attributes[attribute].location = this.shader.gl.getAttribLocation(this.shader.program, this.geometry.attributes[attribute].name)
-			this.geometry.attributes[attribute].buffer = this.shader.gl.createBuffer()
-			this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].buffer)
-			this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].data, this.shader.gl.STATIC_DRAW)
+		for (const attribute in this.attributes) {
+			this.attributes[attribute].location = this.shader.gl.getAttribLocation(this.shader.program, this.attributes[attribute].name)
+			this.attributes[attribute].buffer = this.shader.gl.createBuffer()
+			this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER, this.attributes[attribute].buffer)
+			this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER, this.attributes[attribute].data, this.shader.gl.STATIC_DRAW)
 		}
 	}
 
 	_setUniformData() {
-		if (this.shader.uniforms) {
-			for (const uniform in this.shader.uniforms) {
-				this.shader.uniforms[uniform].location = this.shader.gl.getUniformLocation(this.shader.program, this.shader.uniforms[uniform].name)
-			}
+		for (const uniform in this.uniforms) {
+			this.uniforms[uniform].location = this.shader.gl.getUniformLocation(this.shader.program, this.uniforms[uniform].name)
 		}
 	}
 
 	_setDrawMode() {
-		this.drawMode = this.geometry.type ?? 'TRIANGLES'
+		this.drawMode = this.geometryType ?? 'TRIANGLES'
     }
 
     _setSurfaceNormals() {
-    	if (this.shader.surfaceNormals) {
+    	if (this.surfaceNormals) {
     		const surfaceNormals = []
     		for (let i = 0; i < this.geometry.attributes.aNormal.data.length; i+=9) {
     			const p1 = [this.geometry.attributes.aNormal.data[i], this.geometry.attributes.aNormal.data[i+1], this.geometry.attributes.aNormal.data[i+2]]
@@ -123,4 +141,23 @@ export default class Mesh {
 		this.scale = { x, y, z }
 		this._recalculateModelMatrix()
 	}
+
+	setAttribute(name, data, size) {
+        this.attributes[name] = {
+            name,
+            data,
+            size,
+            count: data.length / size
+        }
+        this._setAttributeData()
+    }
+
+	setUniform(name, value, type) {
+        this.uniforms[name] = {
+            name,
+            value,
+            type
+        }
+        this._setUniformData()
+    }
 }

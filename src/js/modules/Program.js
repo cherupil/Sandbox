@@ -8,24 +8,6 @@ export default class Program {
 		this.gl = gl
 		this.id = programId++
 		this.program = this._createProgram(gl, vertexShader, fragmentShader)
-		this.uniforms = {
-			uViewProjectionMatrix: {
-				name: 'uViewProjectionMatrix',
-				value: null,
-				type: 'mat4'
-			},
-			uNormalMatrix: {
-				name: 'uNormalMatrix',
-				value: null,
-				type: 'mat4'
-			},
-			uLocalMatrix: {
-				name: 'uLocalMatrix',
-				value: null,
-				type: 'mat4'
-			}
-		}
-		this.surfaceNormals = false
 	}
 
 	_createShader(gl, type, source) {
@@ -54,12 +36,4 @@ export default class Program {
 		console.log(gl.getProgramInfoLog(program))
 		gl.deleteProgram(program)
 	}
-
-	setUniform(name, value, type) {
-        this.uniforms[name] = {
-            name,
-            value,
-            type
-        }
-    }
 }

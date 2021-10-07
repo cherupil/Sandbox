@@ -6,7 +6,7 @@ export default class Volume {
 	add(object) {
 		this.objects.push(object)
 		this.objects.sort((a, b) => {
-			const bufferDiff = a.geometry.id - b.geometry.id
+			const bufferDiff = a.geometryID - b.geometryID
 			if (bufferDiff) {
 				return bufferDiff
 			}

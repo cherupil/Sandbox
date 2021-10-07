@@ -64,48 +64,48 @@ export default class Renderer {
     			bindBuffers = true
     		}
 
-    		if (bindBuffers || object.geometry.attributes != lastBuffer) {
-				for (const attribute in object.geometry.attributes) {
-					this.gl.enableVertexAttribArray(object.geometry.attributes[attribute].location)
-					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, object.geometry.attributes[attribute].buffer)
-					const size = object.geometry.attributes[attribute].size
+    		if (bindBuffers || object.attributes != lastBuffer) {
+				for (const attribute in object.attributes) {
+					this.gl.enableVertexAttribArray(object.attributes[attribute].location)
+					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, object.attributes[attribute].buffer)
+					const size = object.attributes[attribute].size
 					const type = this.gl.FLOAT
 					const normalize = false
 					const stride = 0
 					const offset = 0
-					this.gl.vertexAttribPointer(object.geometry.attributes[attribute].location, size, type, normalize, stride, offset)
+					this.gl.vertexAttribPointer(object.attributes[attribute].location, size, type, normalize, stride, offset)
 				}
-				lastBuffer = object.geometry.attributes
+				lastBuffer = object.attributes
 			}
 
-			for (const uniform in object.shader.uniforms) {
+			for (const uniform in object.uniforms) {
 				if (uniform === 'uViewProjectionMatrix') {
-					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix)
+					this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.projectionMatrix)
 				} else if (uniform === 'uNormalMatrix') {
-					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.normalMatrix)
+					this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.normalMatrix)
 				} else if (uniform === 'uLocalMatrix') {
-					this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.localMatrix)
+					this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.localMatrix)
 				} else {
-					switch (object.shader.uniforms[uniform].type) {
+					switch (object.uniforms[uniform].type) {
 						case '1f':
-							this.gl.uniform1f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value)
+							this.gl.uniform1f(object.uniforms[uniform].location, object.uniforms[uniform].value)
 							break
 						case '2f':
-							this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1])
+							this.gl.uniform2f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1])
 							break
 						case '3f':
-							this.gl.uniform3f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1], object.shader.uniforms[uniform].value[2])
+							this.gl.uniform3f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1], object.uniforms[uniform].value[2])
 							break
 						case 'mat3':
-							this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value)
+							this.gl.uniformMatrix3fv(object.uniforms[uniform].location, false, object.uniforms[uniform].value)
 							break
 						case 'mat4':
-							this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value)
+							this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.uniforms[uniform].value)
 							break
 						case 'tex':
-							this.gl.uniform1i(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value.id)
-							this.gl.activeTexture(this.gl.TEXTURE0 + object.shader.uniforms[uniform].value.id)
-							this.gl.bindTexture(this.gl.TEXTURE_2D, object.shader.uniforms[uniform].value.texture)
+							this.gl.uniform1i(object.uniforms[uniform].location, object.uniforms[uniform].value.id)
+							this.gl.activeTexture(this.gl.TEXTURE0 + object.uniforms[uniform].value.id)
+							this.gl.bindTexture(this.gl.TEXTURE_2D, object.uniforms[uniform].value.texture)
 						default:
 							break
 					}
@@ -114,7 +114,7 @@ export default class Renderer {
 
 			const primitiveType = this.gl[object.drawMode]
 			const vertexOffset = 0
-			const count = object.geometry.attributes.aPosition.count
+			const count = object.attributes.aPosition.count
 			this.gl.drawArrays(primitiveType, vertexOffset, count)
     	}
     }

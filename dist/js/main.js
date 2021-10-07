@@ -1,15 +1,9 @@
 (() => {
-  // src/shaders/sphere/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = mat3(uNormalMatrix) * aNormal;\n	vUV = aUV;\n}";
-
-  // src/shaders/sphere/fragment.glsl
-  var fragment_default = "precision mediump float;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n}";
-
   // src/shaders/plane/vertex.glsl
-  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform vec3 uPointLight;\nuniform vec3 uCameraPosition;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\nvarying vec3 vSurfaceToLight;\nvarying vec3 vSurfaceToCamera;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	vec3 surfacePosition = (uLocalMatrix * aPosition).xyz;\n	gl_Position = position;\n	vNormal = mat3(uNormalMatrix) * aNormal;\n	vUV = aUV;\n	vSurfaceToLight = uPointLight - surfacePosition;\n	vSurfaceToCamera = uCameraPosition - surfacePosition;\n}";
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
 
   // src/shaders/plane/fragment.glsl
-  var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\nvarying vec3 vSurfaceToLight;\nvarying vec3 vSurfaceToCamera;\n\nvoid main() {\n	vec3 normal = normalize(vNormal);\n	vec3 surfaceToLight = normalize(vSurfaceToLight);\n	vec3 surfaceToCamera = normalize(vSurfaceToCamera);\n	vec3 halfVector = normalize(vSurfaceToLight + vSurfaceToCamera);\n	vec4 texture = texture2D(uTexture, vUV);\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	float light = dot(normal, surfaceToLight);\n	float specular = 0.0;\n	if (light > 0.0) {\n		specular = pow(dot(normal, halfVector), 16.0);\n	}\n	gl_FragColor = texture;\n	gl_FragColor.rgb += gl_FragColor.rgb * ((light + 1.0) * 0.5);\n	gl_FragColor.rgb += specular;\n}";
+  var fragment_default = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\n\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	gl_FragColor = vec4(uPlaneColor, 1.0);\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -62,47 +56,47 @@
           lastShader = object.shader.program;
           bindBuffers = true;
         }
-        if (bindBuffers || object.geometry.attributes != lastBuffer) {
-          for (const attribute in object.geometry.attributes) {
-            this.gl.enableVertexAttribArray(object.geometry.attributes[attribute].location);
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, object.geometry.attributes[attribute].buffer);
-            const size = object.geometry.attributes[attribute].size;
+        if (bindBuffers || object.attributes != lastBuffer) {
+          for (const attribute in object.attributes) {
+            this.gl.enableVertexAttribArray(object.attributes[attribute].location);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, object.attributes[attribute].buffer);
+            const size = object.attributes[attribute].size;
             const type = this.gl.FLOAT;
             const normalize = false;
             const stride = 0;
             const offset = 0;
-            this.gl.vertexAttribPointer(object.geometry.attributes[attribute].location, size, type, normalize, stride, offset);
+            this.gl.vertexAttribPointer(object.attributes[attribute].location, size, type, normalize, stride, offset);
           }
-          lastBuffer = object.geometry.attributes;
+          lastBuffer = object.attributes;
         }
-        for (const uniform in object.shader.uniforms) {
+        for (const uniform in object.uniforms) {
           if (uniform === "uViewProjectionMatrix") {
-            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.projectionMatrix);
+            this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.projectionMatrix);
           } else if (uniform === "uNormalMatrix") {
-            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.normalMatrix);
+            this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.normalMatrix);
           } else if (uniform === "uLocalMatrix") {
-            this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.localMatrix);
+            this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.localMatrix);
           } else {
-            switch (object.shader.uniforms[uniform].type) {
+            switch (object.uniforms[uniform].type) {
               case "1f":
-                this.gl.uniform1f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value);
+                this.gl.uniform1f(object.uniforms[uniform].location, object.uniforms[uniform].value);
                 break;
               case "2f":
-                this.gl.uniform2f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1]);
+                this.gl.uniform2f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1]);
                 break;
               case "3f":
-                this.gl.uniform3f(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value[0], object.shader.uniforms[uniform].value[1], object.shader.uniforms[uniform].value[2]);
+                this.gl.uniform3f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1], object.uniforms[uniform].value[2]);
                 break;
               case "mat3":
-                this.gl.uniformMatrix3fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value);
+                this.gl.uniformMatrix3fv(object.uniforms[uniform].location, false, object.uniforms[uniform].value);
                 break;
               case "mat4":
-                this.gl.uniformMatrix4fv(object.shader.uniforms[uniform].location, false, object.shader.uniforms[uniform].value);
+                this.gl.uniformMatrix4fv(object.uniforms[uniform].location, false, object.uniforms[uniform].value);
                 break;
               case "tex":
-                this.gl.uniform1i(object.shader.uniforms[uniform].location, object.shader.uniforms[uniform].value.id);
-                this.gl.activeTexture(this.gl.TEXTURE0 + object.shader.uniforms[uniform].value.id);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, object.shader.uniforms[uniform].value.texture);
+                this.gl.uniform1i(object.uniforms[uniform].location, object.uniforms[uniform].value.id);
+                this.gl.activeTexture(this.gl.TEXTURE0 + object.uniforms[uniform].value.id);
+                this.gl.bindTexture(this.gl.TEXTURE_2D, object.uniforms[uniform].value.texture);
               default:
                 break;
             }
@@ -110,7 +104,7 @@
         }
         const primitiveType = this.gl[object.drawMode];
         const vertexOffset = 0;
-        const count = object.geometry.attributes.aPosition.count;
+        const count = object.attributes.aPosition.count;
         this.gl.drawArrays(primitiveType, vertexOffset, count);
       }
     }
@@ -652,7 +646,7 @@
     add(object) {
       this.objects.push(object);
       this.objects.sort((a, b) => {
-        const bufferDiff = a.geometry.id - b.geometry.id;
+        const bufferDiff = a.geometryID - b.geometryID;
         if (bufferDiff) {
           return bufferDiff;
         }
@@ -664,7 +658,8 @@
   // src/js/modules/Mesh.js
   var Mesh = class {
     constructor(geometry, shader) {
-      this.geometry = geometry;
+      this.geometryID = geometry.id;
+      this.geometryType = geometry.type;
       this.shader = shader;
       this.position = {
         x: 0,
@@ -681,6 +676,25 @@
         y: 1,
         z: 1
       };
+      this.attributes = geometry.attributes;
+      this.uniforms = {
+        uViewProjectionMatrix: {
+          name: "uViewProjectionMatrix",
+          value: null,
+          type: "mat4"
+        },
+        uNormalMatrix: {
+          name: "uNormalMatrix",
+          value: null,
+          type: "mat4"
+        },
+        uLocalMatrix: {
+          name: "uLocalMatrix",
+          value: null,
+          type: "mat4"
+        }
+      };
+      this.surfaceNormals = false;
       this.localMatrix = Matrix.identity();
       this._setAttributeData();
       this._setUniformData();
@@ -688,25 +702,23 @@
       this._setSurfaceNormals();
     }
     _setAttributeData() {
-      for (const attribute in this.geometry.attributes) {
-        this.geometry.attributes[attribute].location = this.shader.gl.getAttribLocation(this.shader.program, this.geometry.attributes[attribute].name);
-        this.geometry.attributes[attribute].buffer = this.shader.gl.createBuffer();
-        this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].buffer);
-        this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER, this.geometry.attributes[attribute].data, this.shader.gl.STATIC_DRAW);
+      for (const attribute in this.attributes) {
+        this.attributes[attribute].location = this.shader.gl.getAttribLocation(this.shader.program, this.attributes[attribute].name);
+        this.attributes[attribute].buffer = this.shader.gl.createBuffer();
+        this.shader.gl.bindBuffer(this.shader.gl.ARRAY_BUFFER, this.attributes[attribute].buffer);
+        this.shader.gl.bufferData(this.shader.gl.ARRAY_BUFFER, this.attributes[attribute].data, this.shader.gl.STATIC_DRAW);
       }
     }
     _setUniformData() {
-      if (this.shader.uniforms) {
-        for (const uniform in this.shader.uniforms) {
-          this.shader.uniforms[uniform].location = this.shader.gl.getUniformLocation(this.shader.program, this.shader.uniforms[uniform].name);
-        }
+      for (const uniform in this.uniforms) {
+        this.uniforms[uniform].location = this.shader.gl.getUniformLocation(this.shader.program, this.uniforms[uniform].name);
       }
     }
     _setDrawMode() {
-      this.drawMode = this.geometry.type ?? "TRIANGLES";
+      this.drawMode = this.geometryType ?? "TRIANGLES";
     }
     _setSurfaceNormals() {
-      if (this.shader.surfaceNormals) {
+      if (this.surfaceNormals) {
         const surfaceNormals = [];
         for (let i = 0; i < this.geometry.attributes.aNormal.data.length; i += 9) {
           const p1 = [this.geometry.attributes.aNormal.data[i], this.geometry.attributes.aNormal.data[i + 1], this.geometry.attributes.aNormal.data[i + 2]];
@@ -767,6 +779,23 @@
     setScale(x, y, z) {
       this.scale = { x, y, z };
       this._recalculateModelMatrix();
+    }
+    setAttribute(name, data, size) {
+      this.attributes[name] = {
+        name,
+        data,
+        size,
+        count: data.length / size
+      };
+      this._setAttributeData();
+    }
+    setUniform(name, value, type) {
+      this.uniforms[name] = {
+        name,
+        value,
+        type
+      };
+      this._setUniformData();
     }
   };
 
@@ -1050,24 +1079,6 @@
       this.gl = gl;
       this.id = programId++;
       this.program = this._createProgram(gl, vertexShader, fragmentShader);
-      this.uniforms = {
-        uViewProjectionMatrix: {
-          name: "uViewProjectionMatrix",
-          value: null,
-          type: "mat4"
-        },
-        uNormalMatrix: {
-          name: "uNormalMatrix",
-          value: null,
-          type: "mat4"
-        },
-        uLocalMatrix: {
-          name: "uLocalMatrix",
-          value: null,
-          type: "mat4"
-        }
-      };
-      this.surfaceNormals = false;
     }
     _createShader(gl, type, source) {
       const shader = gl.createShader(type);
@@ -1091,13 +1102,6 @@
       }
       console.log(gl.getProgramInfoLog(program));
       gl.deleteProgram(program);
-    }
-    setUniform(name, value, type) {
-      this.uniforms[name] = {
-        name,
-        value,
-        type
-      };
     }
   };
 
@@ -1228,83 +1232,29 @@
   Sandbox.FrameBuffer = FrameBuffer;
 
   // src/js/main.js
-  var aspectRatio = window.innerWidth / window.innerHeight;
   var canvas = document.getElementById("webgl");
   var renderer = new Sandbox.Renderer(canvas);
-  var jellyfish = new Sandbox.ImageTexture(renderer.gl, "./img/jellyfish.jpg");
-  var fbTex = new Sandbox.DataTexture(renderer.gl, "rgba", 256 * renderer.pixelRatio, 256 * renderer.pixelRatio, null, "linear");
-  var cubeFaceFrameBuffer = new Sandbox.FrameBuffer(renderer.gl, fbTex);
   var volume = new Sandbox.Volume();
-  var pointLight = new Sandbox.Light("point", [0, 0, 1.25]);
-  var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
-  planeShader.surfaceNormals = true;
-  planeShader.setUniform("uTexture", jellyfish, "tex");
-  planeShader.setUniform("uPointLight", pointLight.position, "3f");
-  planeShader.setUniform("uCameraPosition", [0, 0, 5]);
-  var cube = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
-  var cubeMesh = new Sandbox.Mesh(cube, planeShader);
-  volume.add(cubeMesh);
-  cubeMesh.setPosition(0, 0, -1);
-  var sphere = new Sandbox.Sphere(0.25, 64);
-  var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
-  var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
-  volume.add(sphereMesh);
+  var aspectRatio = window.innerWidth / window.innerHeight;
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 5;
   renderer.resize();
+  var plane = new Sandbox.Plane(2, 2, 1, 1);
+  var planeShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  for (let i = -1; i < 2; i++) {
+    const greyValue = (i + 2) * 0.2;
+    const planeMesh = new Sandbox.Mesh(plane, planeShader);
+    planeMesh.setUniform("uPlaneColor", [greyValue, greyValue, greyValue], "3f");
+    planeMesh.setPosition(i * 3, 0, 0);
+    volume.add(planeMesh);
+  }
   var time = 0;
-  var translateX = document.getElementById("translateX");
-  var translateY = document.getElementById("translateY");
-  translateX.addEventListener("input", (event) => {
-    camera.position.x = event.target.value;
-  });
-  translateY.addEventListener("input", (event) => {
-    camera.position.y = event.target.value;
-  });
-  var buttons = document.querySelectorAll("button");
-  buttons.forEach((button) => {
-    button.addEventListener("click", (event) => {
-      buttons.forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
-      switch (button.id) {
-        case "none":
-          camera.lookAtEnabled = false;
-          break;
-        case "sphere":
-          camera.lookAt(cubeMesh);
-          break;
-        case "light":
-          camera.lookAt(sphereMesh);
-          break;
-        default:
-          break;
-      }
-    });
-  });
   var then = 0;
   var draw = (now) => {
-    renderer.setFrameBuffer(cubeFaceFrameBuffer);
-    renderer.gl.clearColor(0.09, 0.2, 0.2, 1);
-    camera.setAspectRatio(1);
-    renderer.gl.viewport(0, 0, fbTex.width, fbTex.height);
-    planeShader.uniforms.uTexture.value = jellyfish;
-    cubeMesh.setRotationY(time * 15);
-    cubeMesh.setRotationX(time * 15);
-    renderer.render(volume, camera);
-    cubeMesh.setRotationX(0);
-    renderer.setFrameBuffer(null);
     renderer.gl.clearColor(0, 0, 0, 1);
-    camera.setAspectRatio(renderer.gl.canvas.width / renderer.gl.canvas.height);
-    renderer.gl.viewport(0, 0, renderer.gl.canvas.width, renderer.gl.canvas.height);
-    planeShader.uniforms.uTexture.value = fbTex;
     renderer.render(volume, camera);
     now *= 1e-3;
     time += now - then;
-    pointLight.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3);
-    planeShader.uniforms.uPointLight.value = pointLight.position;
-    planeShader.uniforms.uCameraPosition.value = [camera.position.x, camera.position.y, camera.position.z];
-    cubeMesh.setRotationY(time * 10);
-    sphereMesh.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3);
     then = now;
     window.requestAnimationFrame(draw);
   };
@@ -1315,39 +1265,4 @@
     }
   });
   window.requestAnimationFrame(draw);
-  var controls = document.querySelector(".controls");
-  var mouse = {
-    x1: 0,
-    y1: 0,
-    x2: 0,
-    y2: 0
-  };
-  controls.addEventListener("mousedown", (event) => {
-    if (event.target.classList.contains("controls")) {
-      event.preventDefault();
-      mouse.x1 = event.clientX;
-      mouse.y1 = event.clientY;
-      document.onmouseup = removeDrag;
-      document.onmousemove = dragControls;
-    }
-  });
-  var dragControls = (event) => {
-    event.preventDefault();
-    mouse.x2 = mouse.x1 - event.clientX;
-    mouse.y2 = mouse.y1 - event.clientY;
-    mouse.x1 = event.clientX;
-    mouse.y1 = event.clientY;
-    controls.style.top = `${controls.offsetTop - mouse.y2}px`;
-    controls.style.bottom = `auto`;
-    controls.style.left = `${controls.offsetLeft - mouse.x2}px`;
-  };
-  var removeDrag = () => {
-    document.onmouseup = null;
-    document.onmousemove = null;
-  };
-  var resetButton = document.querySelector("button");
-  window.setTimeout(() => {
-    controls.classList.add("active");
-    resetButton.classList.add("active");
-  }, 500);
 })();
