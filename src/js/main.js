@@ -5,13 +5,18 @@ import planeShaderFragment from '../shaders/plane/fragment.glsl'
 
 import Sandbox from './modules/Sandbox.js'
 
+/*const SPECTOR = require('spectorjs')
+const spector = new SPECTOR.Spector()
+spector.displayUI()*/
+
 let aspectRatio = window.innerWidth / window.innerHeight
 const canvas = document.getElementById('webgl')
 const renderer = new Sandbox.Renderer(canvas)
 
 const jellyfish = new Sandbox.ImageTexture(renderer.gl, './img/jellyfish.jpg')
-//const danielle = new Sandbox.ImageTexture(renderer.gl, './img/danielle.jpg')
-const dataTex = new Sandbox.DataTexture(renderer.gl, 'luminance', 3, 2, [128, 64, 128, 0, 192, 0])
+const fbTex = new Sandbox.DataTexture(renderer.gl, 'rgba', 256 * renderer.pixelRatio, 256 * renderer.pixelRatio, null, 'linear')
+
+const cubeFaceFrameBuffer = new Sandbox.FrameBuffer(renderer.gl, fbTex)
 
 const volume = new Sandbox.Volume()
 
@@ -29,26 +34,12 @@ planeShader.setUniform('uTexture', jellyfish, 'tex')
 planeShader.setUniform('uPointLight', pointLight.position, '3f')
 planeShader.setUniform('uCameraPosition', [0, 0, 5])
 
-const planeShaderTwo = new Sandbox.Program(renderer.gl, planeShaderVertex, planeShaderFragment)
-planeShaderTwo.surfaceNormals = true
-planeShaderTwo.setUniform('uTexture', dataTex, 'tex')
-planeShaderTwo.setUniform('uPointLight', pointLight.position, '3f')
-planeShaderTwo.setUniform('uCameraPosition', [0, 0, 5])
-
 //Cube
 const cube = new Sandbox.Cube(2, 2, 2, 1, 1, 1)
 const cubeMesh = new Sandbox.Mesh(cube, planeShader)
 volume.add(cubeMesh)
 
-cubeMesh.setPosition(-2, 0, -1)
-
-const cubeTwo = new Sandbox.Cube(2, 2, 2, 1, 1, 1)
-const cubeMeshTwo = new Sandbox.Mesh(cubeTwo, planeShaderTwo)
-volume.add(cubeMeshTwo)
-
-cubeMeshTwo.setPosition(2, 0, -1)
-
-console.log(cubeMeshTwo)
+cubeMesh.setPosition(0, 0, -1)
 
 //Sphere
 const sphere = new Sandbox.Sphere(0.25, 64)
@@ -61,9 +52,6 @@ volume.add(sphereMesh)
 const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
 camera.position.z = 5
 renderer.resize()
-
-//Clear canvas
-renderer.gl.clearColor(0, 0, 0, 0)
 
 let time = 0
 
@@ -102,20 +90,27 @@ buttons.forEach(button => {
 
 let then = 0
 const draw = (now) => {
+	renderer.setFrameBuffer(cubeFaceFrameBuffer)
+	renderer.gl.clearColor(0.09, 0.2, 0.2, 1)
+	camera.setAspectRatio(1)
+	renderer.gl.viewport(0, 0, fbTex.width, fbTex.height)
+	planeShader.uniforms.uTexture.value = jellyfish
+	cubeMesh.setRotationY(time*15)
+	cubeMesh.setRotationX(time*15)
+	renderer.render(volume, camera)
+	cubeMesh.setRotationX(0)
+	renderer.setFrameBuffer(null)
+	renderer.gl.clearColor(0, 0, 0, 1)
+	camera.setAspectRatio(renderer.gl.canvas.width / renderer.gl.canvas.height)
+	renderer.gl.viewport(0, 0, renderer.gl.canvas.width, renderer.gl.canvas.height)
+	planeShader.uniforms.uTexture.value = fbTex
 	renderer.render(volume, camera)
 	now *= 0.001
 	time += now - then
-	translateX.value = Math.cos(time)
- 	camera.position.x = Math.cos(time)
- 	translateY.value = Math.sin(time)
- 	camera.position.y = Math.sin(time)
  	pointLight.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3)
  	planeShader.uniforms.uPointLight.value = pointLight.position
- 	planeShaderTwo.uniforms.uPointLight.value = pointLight.position
  	planeShader.uniforms.uCameraPosition.value = [camera.position.x, camera.position.y, camera.position.z]
- 	planeShaderTwo.uniforms.uCameraPosition.value = [camera.position.x, camera.position.y, camera.position.z]
  	cubeMesh.setRotationY(time*10)
- 	cubeMeshTwo.setRotationY(time*10)
  	sphereMesh.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3)
  	then = now
 	window.requestAnimationFrame(draw)

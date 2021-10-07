@@ -22,9 +22,17 @@
       this.pixelRatio = 2;
       this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
       this.gl.pixelStorei(this.gl.UNPACK_ALIGNMENT, 1);
+      this.framebuffer = null;
     }
     setPixelRatio(ratio) {
       this.pixelRatio = ratio;
+    }
+    setFrameBuffer(framebuffer) {
+      if (framebuffer !== null) {
+        this.framebuffer = framebuffer.buffer;
+      } else {
+        this.framebuffer = null;
+      }
     }
     resize() {
       const displayWidth = this.gl.canvas.clientWidth * this.pixelRatio;
@@ -39,13 +47,14 @@
       return false;
     }
     render(volume2, camera2) {
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
       this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
       this.gl.enable(this.gl.CULL_FACE);
       this.gl.enable(this.gl.DEPTH_TEST);
       let lastShader = null;
       let lastBuffer = null;
+      camera2.setViewProjectionMatrix();
       for (const object of volume2.objects) {
-        camera2.setViewProjectionMatrix();
         object.setProjectionMatrix(camera2.viewProjectionMatrix);
         let bindBuffers = false;
         if (object.shader.program !== lastShader) {
@@ -1115,12 +1124,13 @@
     }
   };
   var DataTexture = class {
-    constructor(gl, format, width, height, data) {
+    constructor(gl, format, width, height, data, filter) {
       this.gl = gl;
       this.texture = this.gl.createTexture();
       this.id = textureId++;
       this.width = width;
       this.height = height;
+      this.data = data ? new Uint8Array(data) : null;
       switch (format) {
         case "rgba":
           this.format = this.gl.RGBA;
@@ -1134,13 +1144,27 @@
         case "luminance":
           this.format = this.gl.LUMINANCE;
           break;
+        default:
+          this.format = this.gl.RGBA;
+          break;
+      }
+      switch (filter) {
+        case "linear":
+          this.filter = this.gl.LINEAR;
+          break;
+        case "nearest":
+          this.filter = this.gl.NEAREST;
+          break;
+        default:
+          this.filter = this.gl.NEAREST;
+          break;
       }
       this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.format, width, height, 0, this.format, this.gl.UNSIGNED_BYTE, new Uint8Array(data));
+      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.format, width, height, 0, this.format, this.gl.UNSIGNED_BYTE, this.data);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
       this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
-      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.filter);
+      this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.filter);
     }
   };
 
@@ -1159,6 +1183,20 @@
     }
     setPosition(x, y, z) {
       this.position = [x, y, z];
+    }
+  };
+
+  // src/js/modules/FrameBuffer.js
+  var FrameBuffer = class {
+    constructor(gl, target) {
+      this.gl = gl;
+      this.target = target;
+      this.buffer = this.gl.createFramebuffer();
+      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.buffer);
+      this.attach(this.target);
+    }
+    attach(target) {
+      this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, target.texture, 0);
     }
   };
 
@@ -1187,13 +1225,15 @@
   Sandbox.ImageTexture = ImageTexture;
   Sandbox.DataTexture = DataTexture;
   Sandbox.Light = Light;
+  Sandbox.FrameBuffer = FrameBuffer;
 
   // src/js/main.js
   var aspectRatio = window.innerWidth / window.innerHeight;
   var canvas = document.getElementById("webgl");
   var renderer = new Sandbox.Renderer(canvas);
   var jellyfish = new Sandbox.ImageTexture(renderer.gl, "./img/jellyfish.jpg");
-  var dataTex = new Sandbox.DataTexture(renderer.gl, "luminance", 3, 2, [128, 64, 128, 0, 192, 0]);
+  var fbTex = new Sandbox.DataTexture(renderer.gl, "rgba", 256 * renderer.pixelRatio, 256 * renderer.pixelRatio, null, "linear");
+  var cubeFaceFrameBuffer = new Sandbox.FrameBuffer(renderer.gl, fbTex);
   var volume = new Sandbox.Volume();
   var pointLight = new Sandbox.Light("point", [0, 0, 1.25]);
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
@@ -1201,20 +1241,10 @@
   planeShader.setUniform("uTexture", jellyfish, "tex");
   planeShader.setUniform("uPointLight", pointLight.position, "3f");
   planeShader.setUniform("uCameraPosition", [0, 0, 5]);
-  var planeShaderTwo = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
-  planeShaderTwo.surfaceNormals = true;
-  planeShaderTwo.setUniform("uTexture", dataTex, "tex");
-  planeShaderTwo.setUniform("uPointLight", pointLight.position, "3f");
-  planeShaderTwo.setUniform("uCameraPosition", [0, 0, 5]);
   var cube = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
   var cubeMesh = new Sandbox.Mesh(cube, planeShader);
   volume.add(cubeMesh);
-  cubeMesh.setPosition(-2, 0, -1);
-  var cubeTwo = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
-  var cubeMeshTwo = new Sandbox.Mesh(cubeTwo, planeShaderTwo);
-  volume.add(cubeMeshTwo);
-  cubeMeshTwo.setPosition(2, 0, -1);
-  console.log(cubeMeshTwo);
+  cubeMesh.setPosition(0, 0, -1);
   var sphere = new Sandbox.Sphere(0.25, 64);
   var sphereShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   var sphereMesh = new Sandbox.Mesh(sphere, sphereShader);
@@ -1222,7 +1252,6 @@
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 5;
   renderer.resize();
-  renderer.gl.clearColor(0, 0, 0, 0);
   var time = 0;
   var translateX = document.getElementById("translateX");
   var translateY = document.getElementById("translateY");
@@ -1254,20 +1283,27 @@
   });
   var then = 0;
   var draw = (now) => {
+    renderer.setFrameBuffer(cubeFaceFrameBuffer);
+    renderer.gl.clearColor(0.09, 0.2, 0.2, 1);
+    camera.setAspectRatio(1);
+    renderer.gl.viewport(0, 0, fbTex.width, fbTex.height);
+    planeShader.uniforms.uTexture.value = jellyfish;
+    cubeMesh.setRotationY(time * 15);
+    cubeMesh.setRotationX(time * 15);
+    renderer.render(volume, camera);
+    cubeMesh.setRotationX(0);
+    renderer.setFrameBuffer(null);
+    renderer.gl.clearColor(0, 0, 0, 1);
+    camera.setAspectRatio(renderer.gl.canvas.width / renderer.gl.canvas.height);
+    renderer.gl.viewport(0, 0, renderer.gl.canvas.width, renderer.gl.canvas.height);
+    planeShader.uniforms.uTexture.value = fbTex;
     renderer.render(volume, camera);
     now *= 1e-3;
     time += now - then;
-    translateX.value = Math.cos(time);
-    camera.position.x = Math.cos(time);
-    translateY.value = Math.sin(time);
-    camera.position.y = Math.sin(time);
     pointLight.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3);
     planeShader.uniforms.uPointLight.value = pointLight.position;
-    planeShaderTwo.uniforms.uPointLight.value = pointLight.position;
     planeShader.uniforms.uCameraPosition.value = [camera.position.x, camera.position.y, camera.position.z];
-    planeShaderTwo.uniforms.uCameraPosition.value = [camera.position.x, camera.position.y, camera.position.z];
     cubeMesh.setRotationY(time * 10);
-    cubeMeshTwo.setRotationY(time * 10);
     sphereMesh.setPosition(Math.sin(time * 1.5) * 6, Math.cos(time * 1.5) * 3, Math.sin(time * 1) * 3);
     then = now;
     window.requestAnimationFrame(draw);

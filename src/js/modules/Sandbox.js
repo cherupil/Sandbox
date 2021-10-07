@@ -12,6 +12,7 @@ import Sphere from './Sphere.js'
 import Program from './Program.js'
 import { ImageTexture, DataTexture } from './Texture.js'
 import Light from './Light.js'
+import FrameBuffer from './FrameBuffer.js'
 
 export default class Sandbox {
 	static createColor(r, g, b) {
@@ -38,3 +39,4 @@ Sandbox.Program = Program
 Sandbox.ImageTexture = ImageTexture
 Sandbox.DataTexture = DataTexture
 Sandbox.Light = Light
+Sandbox.FrameBuffer = FrameBuffer

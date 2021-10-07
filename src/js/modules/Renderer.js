@@ -9,10 +9,19 @@ export default class Renderer {
 		this.pixelRatio = 2.0
 		this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true)
 		this.gl.pixelStorei(this.gl.UNPACK_ALIGNMENT, 1)
+		this.framebuffer = null
 	}
 
 	setPixelRatio(ratio) {
 		this.pixelRatio = ratio
+	}
+
+	setFrameBuffer(framebuffer) {
+		if (framebuffer !== null) {
+			this.framebuffer = framebuffer.buffer
+		} else {
+			this.framebuffer = null
+		}
 	}
 
 	resize() {
@@ -34,6 +43,7 @@ export default class Renderer {
     }
 
     render(volume, camera) {
+    	this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer)
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
 
     	this.gl.enable(this.gl.CULL_FACE)
@@ -42,8 +52,9 @@ export default class Renderer {
     	let lastShader = null
     	let lastBuffer = null
 
+    	camera.setViewProjectionMatrix()
+
     	for (const object of volume.objects) {    
-    		camera.setViewProjectionMatrix()
     		object.setProjectionMatrix(camera.viewProjectionMatrix)
     		let bindBuffers = false
 

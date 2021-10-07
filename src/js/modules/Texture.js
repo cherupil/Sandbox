@@ -26,12 +26,13 @@ export class ImageTexture {
 }
 
 export class DataTexture {
-	constructor(gl, format, width, height, data) {
+	constructor(gl, format, width, height, data, filter) {
 		this.gl = gl
 		this.texture = this.gl.createTexture()
 		this.id = textureId++
 		this.width = width
 		this.height = height
+		this.data = data ? new Uint8Array(data) : null
 
 		switch (format) {
 			case 'rgba':
@@ -46,15 +47,30 @@ export class DataTexture {
 			case 'luminance':
 				this.format = this.gl.LUMINANCE
 				break
+			default:
+				this.format = this.gl.RGBA
+				break
+		}
+
+		switch (filter) {
+			case 'linear':
+				this.filter = this.gl.LINEAR
+				break
+			case 'nearest':
+				this.filter = this.gl.NEAREST
+				break
+			default:
+				this.filter = this.gl.NEAREST
+				break
 		}
 
 		this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture)
 		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.format, width, height, 0, this.format, this.gl.UNSIGNED_BYTE,
-              new Uint8Array(data))
+              this.data)
 
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
 		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
-		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST)
-		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST)
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.filter)
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.filter)
 	}
 }
