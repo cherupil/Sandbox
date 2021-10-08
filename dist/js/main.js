@@ -6,10 +6,10 @@
   var fragment_default = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\nuniform float uPickingColor;\n\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	gl_FragColor = vec4(1.0, 0.0, 0.0, uPickingColor);\n}";
 
   // src/shaders/plane/vertex.glsl
-  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * uLocalMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * uLocalMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal + 0.5;\n	vUV = aUV;\n}";
 
   // src/shaders/plane/fragment.glsl
-  var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\nuniform float uPickingColor;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(uPlaneColor, 1.0);\n}";
+  var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\nuniform float uPickingColor;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(vNormal + uPlaneColor, 1.0);\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -1355,14 +1355,14 @@
   var volume = new Sandbox.Volume();
   var aspectRatio = window.innerWidth / window.innerHeight;
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
-  camera.position.z = 5;
+  camera.position.z = 6;
   renderer.resize();
   var pickingShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
   var cube = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
   var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
   for (let i = 0; i < 3; i++) {
     const planeMesh = new Sandbox.Mesh(cube, planeShader);
-    planeMesh.setUniform("uPlaneColor", [0, 0, 1], "3f");
+    planeMesh.setUniform("uPlaneColor", [0, 0, 0], "3f");
     planeMesh.setUniform("uPickingColor", (i + 1) / 3, "1f");
     planeMesh.setPosition((i - 1) * 3, 0, 0);
     volume.add(planeMesh);
@@ -1394,17 +1394,17 @@
     renderer.render(volume, camera);
     const objectIndex = colorPicker.getObjectIndex();
     if (previousObjectIndex > -1) {
-      volume.objects[previousObjectIndex].uniforms.uPlaneColor.value = [0, 0, 1];
+      volume.objects[previousObjectIndex].uniforms.uPlaneColor.value = [0, 0, 0];
     }
     if (objectIndex > -1) {
-      volume.objects[objectIndex].uniforms.uPlaneColor.value = [1, 0, 0];
+      volume.objects[objectIndex].uniforms.uPlaneColor.value = [0.25, 0.25, 0.25];
       previousObjectIndex = objectIndex;
     }
     for (let i = 0; i < volume.objects.length; i++) {
       volume.objects[i].setShader(planeShader);
     }
     renderer.setFrameBuffer(null);
-    renderer.gl.clearColor(1, 1, 1, 1);
+    renderer.gl.clearColor(0, 0, 0, 1);
     camera.createMatrix();
     renderer.render(volume, camera);
     now *= 1e-3;

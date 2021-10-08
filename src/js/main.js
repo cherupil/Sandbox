@@ -16,7 +16,7 @@ const volume = new Sandbox.Volume()
 let aspectRatio = window.innerWidth / window.innerHeight
 const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
 //const camera = new Sandbox.Orthographic(-3 * aspectRatio, 3 * aspectRatio, -3, 3, -7, 7)
-camera.position.z = 5
+camera.position.z = 6
 renderer.resize()
 
 const pickingShader = new Sandbox.Program(renderer.gl, pickingShaderVertex, pickingShaderFragment)
@@ -26,7 +26,7 @@ const planeShader = new Sandbox.Program(renderer.gl, planeShaderVertex, planeSha
 
 for (let i = 0; i < 3; i++) {
 	const planeMesh = new Sandbox.Mesh(cube, planeShader)
-	planeMesh.setUniform('uPlaneColor', [0.0, 0.0, 1.0], '3f')
+	planeMesh.setUniform('uPlaneColor', [0.0, 0.0, 0.0], '3f')
 	planeMesh.setUniform('uPickingColor', ((i+1)/3), '1f')
 	planeMesh.setPosition((i-1) * 3, 0, 0)
 	volume.add(planeMesh)
@@ -69,11 +69,11 @@ const draw = (now) => {
 	const objectIndex = colorPicker.getObjectIndex()
 
 	if (previousObjectIndex > -1) {
-		volume.objects[previousObjectIndex].uniforms.uPlaneColor.value = [0.0, 0.0, 1.0]
+		volume.objects[previousObjectIndex].uniforms.uPlaneColor.value = [0.0, 0.0, 0.0]
 	}
 
 	if (objectIndex > -1) {
-		volume.objects[objectIndex].uniforms.uPlaneColor.value = [1.0, 0.0, 0.0]
+		volume.objects[objectIndex].uniforms.uPlaneColor.value = [0.25, 0.25, 0.25]
 		previousObjectIndex = objectIndex
 	}
 
@@ -82,7 +82,7 @@ const draw = (now) => {
 		volume.objects[i].setShader(planeShader)
 	}
 	renderer.setFrameBuffer(null)
-	renderer.gl.clearColor(1, 1, 1, 1)
+	renderer.gl.clearColor(0, 0, 0, 1)
 	camera.createMatrix()
 	renderer.render(volume, camera)
 	now *= 0.001

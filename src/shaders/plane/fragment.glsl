@@ -8,5 +8,5 @@ varying vec3 vNormal;
 varying vec2 vUV;
 
 void main() {
-	gl_FragColor = vec4(uPlaneColor, 1.0);
+	gl_FragColor = vec4(vNormal + uPlaneColor, 1.0);
 }
