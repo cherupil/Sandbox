@@ -6,6 +6,7 @@ export default class Perspective {
 		this.aspectRatio = aspectRatio
 		this.near = near
 		this.far = far
+		this.type = 'perspective'
 		this.position = {
 			x: 0,
 			y: 0,
@@ -18,10 +19,10 @@ export default class Perspective {
 		}
 		this.viewMatrix = Matrix.identity()
 		this.lookAtEnabled = false
-		this._createMatrix()
+		this.createMatrix()
 	}
 
-	_createMatrix() {
+	createMatrix() {
 		this.top = this.near * Math.tan(this.fieldOfView / 2)
 		this.bottom = -this.top
 		this.right = this.top * this.aspectRatio
@@ -61,22 +62,22 @@ export default class Perspective {
 
 	setFieldOfView(fieldOfView) {
 		this.fieldOfView = fieldOfView * Math.PI / 180
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setAspectRatio(aspectRatio) {
 		this.aspectRatio = aspectRatio
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setNear(near) {
 		this.near = near
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setFar(far) {
 		this.far = far
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setPosition(x, y, z) {

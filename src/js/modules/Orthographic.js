@@ -8,6 +8,7 @@ export default class Orthographic {
 		this.top = top
 		this.near = near
 		this.far = far
+		this.type = 'orthographic'
 		this.position = {
 			x: 0,
 			y: 0,
@@ -19,10 +20,10 @@ export default class Orthographic {
 			z: 0
 		}
 		this.viewMatrix = Matrix.identity()
-		this._createMatrix()
+		this.createMatrix()
 	}
 
-	_createMatrix() {
+	createMatrix() {
 		this.matrix = [
 			2 / (this.right - this.left), 0, 0, 0,
 			0, 2 / (this.top - this.bottom), 0, 0,
@@ -57,32 +58,32 @@ export default class Orthographic {
 
 	setLeft(left) {
 		this.left = left
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setRight(right) {
 		this.right = right
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setBottom(bottom) {
 		this.bottom = bottom
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setTop(top) {
 		this.top = top
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setNear(near) {
 		this.near = near
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setFar(far) {
 		this.far = far
-		this._createMatrix()
+		this.createMatrix()
 	}
 
 	setPosition(x, y, z) {

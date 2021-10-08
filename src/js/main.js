@@ -15,6 +15,7 @@ const volume = new Sandbox.Volume()
 
 let aspectRatio = window.innerWidth / window.innerHeight
 const camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100)
+//const camera = new Sandbox.Orthographic(-3 * aspectRatio, 3 * aspectRatio, -3, 3, -7, 7)
 camera.position.z = 5
 renderer.resize()
 
@@ -39,7 +40,7 @@ let mouse = {
 	y: -1
 }
 
-const colorPicker = new Sandbox.ColorPicker(renderer.gl, mouse)
+const colorPicker = new Sandbox.ColorPicker(renderer.gl, mouse, camera)
 
 canvas.addEventListener('mousemove', (event) => {
 	const bounds = canvas.getBoundingClientRect()
@@ -61,6 +62,7 @@ const draw = (now) => {
 	}
 	renderer.setFrameBuffer(pickingBuffer)
 	renderer.gl.clearColor(0, 0, 0, 0)
+	camera.matrix = colorPicker.getMatrix()
 	renderer.render(volume, camera)
 
 	//Picking Logic
@@ -81,6 +83,7 @@ const draw = (now) => {
 	}
 	renderer.setFrameBuffer(null)
 	renderer.gl.clearColor(1, 1, 1, 1)
+	camera.createMatrix()
 	renderer.render(volume, camera)
 	now *= 0.001
 	time += now - then

@@ -11,7 +11,7 @@ varying vec3 vNormal;
 varying vec2 vUV;
 
 void main() {
-	vec4 position = uViewProjectionMatrix * aPosition;
+	vec4 position = uViewProjectionMatrix * uLocalMatrix * aPosition;
 	gl_Position = position;
 	vNormal = aNormal;
 	vUV = aUV;

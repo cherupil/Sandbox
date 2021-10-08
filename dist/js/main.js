@@ -1,12 +1,12 @@
 (() => {
   // src/shaders/picking/vertex.glsl
-  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+  var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * uLocalMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
 
   // src/shaders/picking/fragment.glsl
   var fragment_default = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\nuniform float uPickingColor;\n\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	gl_FragColor = vec4(1.0, 0.0, 0.0, uPickingColor);\n}";
 
   // src/shaders/plane/vertex.glsl
-  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * uLocalMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
 
   // src/shaders/plane/fragment.glsl
   var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\nuniform float uPickingColor;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(uPlaneColor, 1.0);\n}";
@@ -455,6 +455,7 @@
       this.top = top;
       this.near = near;
       this.far = far;
+      this.type = "orthographic";
       this.position = {
         x: 0,
         y: 0,
@@ -466,9 +467,9 @@
         z: 0
       };
       this.viewMatrix = Matrix.identity();
-      this._createMatrix();
+      this.createMatrix();
     }
-    _createMatrix() {
+    createMatrix() {
       this.matrix = [
         2 / (this.right - this.left),
         0,
@@ -509,27 +510,27 @@
     }
     setLeft(left) {
       this.left = left;
-      this._createMatrix();
+      this.createMatrix();
     }
     setRight(right) {
       this.right = right;
-      this._createMatrix();
+      this.createMatrix();
     }
     setBottom(bottom) {
       this.bottom = bottom;
-      this._createMatrix();
+      this.createMatrix();
     }
     setTop(top) {
       this.top = top;
-      this._createMatrix();
+      this.createMatrix();
     }
     setNear(near) {
       this.near = near;
-      this._createMatrix();
+      this.createMatrix();
     }
     setFar(far) {
       this.far = far;
-      this._createMatrix();
+      this.createMatrix();
     }
     setPosition(x, y, z) {
       this.position = { x, y, z };
@@ -556,6 +557,7 @@
       this.aspectRatio = aspectRatio2;
       this.near = near;
       this.far = far;
+      this.type = "perspective";
       this.position = {
         x: 0,
         y: 0,
@@ -568,9 +570,9 @@
       };
       this.viewMatrix = Matrix.identity();
       this.lookAtEnabled = false;
-      this._createMatrix();
+      this.createMatrix();
     }
-    _createMatrix() {
+    createMatrix() {
       this.top = this.near * Math.tan(this.fieldOfView / 2);
       this.bottom = -this.top;
       this.right = this.top * this.aspectRatio;
@@ -615,19 +617,19 @@
     }
     setFieldOfView(fieldOfView) {
       this.fieldOfView = fieldOfView * Math.PI / 180;
-      this._createMatrix();
+      this.createMatrix();
     }
     setAspectRatio(aspectRatio2) {
       this.aspectRatio = aspectRatio2;
-      this._createMatrix();
+      this.createMatrix();
     }
     setNear(near) {
       this.near = near;
-      this._createMatrix();
+      this.createMatrix();
     }
     setFar(far) {
       this.far = far;
-      this._createMatrix();
+      this.createMatrix();
     }
     setPosition(x, y, z) {
       this.position = { x, y, z };
@@ -767,7 +769,7 @@
     setProjectionMatrix(matrix) {
       this._recalculateModelMatrix();
       this._recalculateNormalMatrix();
-      this.projectionMatrix = Matrix.multiply(matrix, this.localMatrix);
+      this.projectionMatrix = matrix;
     }
     setPosition(x, y, z) {
       this.position = { x, y, z };
@@ -1234,9 +1236,10 @@
 
   // src/js/modules/ColorPicker.js
   var ColorPicker = class {
-    constructor(gl, mouse2) {
+    constructor(gl, mouse2, camera2) {
       this.gl = gl;
       this.mouse = mouse2;
+      this.camera = camera2;
       this.color = new Uint8Array(4);
       this.selectedIndex = -1;
     }
@@ -1249,8 +1252,69 @@
     _getColor() {
       this.gl.readPixels(this.pixel.x, this.pixel.y, 1, 1, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.color);
     }
-    getObjectIndex() {
+    getMatrix() {
       this._getPixel();
+      if (this.camera.type === "perspective") {
+        this.top = this.camera.near * Math.tan(this.camera.fieldOfView / 2);
+        this.bottom = -this.top;
+        this.right = this.top * this.camera.aspectRatio;
+        this.left = -this.right;
+      } else if (this.camera.type === "orthographic") {
+        this.top = this.camera.top;
+        this.bottom = this.camera.bottom;
+        this.right = this.camera.right;
+        this.left = this.camera.left;
+      }
+      this.width = Math.abs(this.right - this.left);
+      this.height = Math.abs(this.top - this.bottom);
+      this.pixelLeft = this.left + this.pixel.x * this.width / this.gl.canvas.width;
+      this.pixelRight = this.pixelLeft + 1 / this.gl.canvas.width;
+      this.pixelTop = this.bottom + this.pixel.y * this.height / this.gl.canvas.height;
+      this.pixelBottom = this.pixelTop + 1 / this.gl.canvas.height;
+      this.near = this.camera.near;
+      this.far = this.camera.far;
+      if (this.camera.type === "perspective") {
+        this.matrix = [
+          2 * this.near / (this.pixelRight - this.pixelLeft),
+          0,
+          0,
+          0,
+          0,
+          2 * this.near / (this.pixelTop - this.pixelBottom),
+          0,
+          0,
+          (this.pixelRight + this.pixelLeft) / (this.pixelRight - this.pixelLeft),
+          (this.pixelTop + this.pixelBottom) / (this.pixelTop - this.pixelBottom),
+          -(this.far + this.near) / (this.far - this.near),
+          -1,
+          0,
+          0,
+          2 * this.far * this.near / (this.near - this.far),
+          0
+        ];
+      } else if (this.camera.type === "orthographic") {
+        this.matrix = [
+          2 / (this.pixelRight - this.pixelLeft),
+          0,
+          0,
+          0,
+          0,
+          2 / (this.pixelTop - this.pixelBottom),
+          0,
+          0,
+          0,
+          0,
+          -2 / (this.far - this.near),
+          0,
+          -((this.pixelRight + this.pixelLeft) / (this.pixelRight - this.pixelLeft)),
+          -((this.pixelTop + this.pixelBottom) / (this.pixelTop - this.pixelBottom)),
+          -((this.far + this.near) / (this.far - this.near)),
+          1
+        ];
+      }
+      return this.matrix;
+    }
+    getObjectIndex() {
       this._getColor();
       this.selectedIndex = this.color[3] / 255 * 3 - 1;
       return this.selectedIndex;
@@ -1309,7 +1373,7 @@
     x: -1,
     y: -1
   };
-  var colorPicker = new Sandbox.ColorPicker(renderer.gl, mouse);
+  var colorPicker = new Sandbox.ColorPicker(renderer.gl, mouse, camera);
   canvas.addEventListener("mousemove", (event) => {
     const bounds = canvas.getBoundingClientRect();
     mouse.x = event.clientX - bounds.left;
@@ -1326,6 +1390,7 @@
     }
     renderer.setFrameBuffer(pickingBuffer);
     renderer.gl.clearColor(0, 0, 0, 0);
+    camera.matrix = colorPicker.getMatrix();
     renderer.render(volume, camera);
     const objectIndex = colorPicker.getObjectIndex();
     if (previousObjectIndex > -1) {
@@ -1340,6 +1405,7 @@
     }
     renderer.setFrameBuffer(null);
     renderer.gl.clearColor(1, 1, 1, 1);
+    camera.createMatrix();
     renderer.render(volume, camera);
     now *= 1e-3;
     time += now - then;

@@ -114,7 +114,7 @@ export default class Mesh {
 	setProjectionMatrix(matrix) {
 		this._recalculateModelMatrix()
 		this._recalculateNormalMatrix()
-		this.projectionMatrix = Matrix.multiply(matrix, this.localMatrix)
+		this.projectionMatrix = matrix
 	}
 
 	setPosition(x, y, z) {
