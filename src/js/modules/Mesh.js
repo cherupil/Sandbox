@@ -160,4 +160,10 @@ export default class Mesh {
         }
         this._setUniformData()
     }
+
+    setShader(shader) {
+    	this.shader = shader
+    	this._setAttributeData()
+		this._setUniformData()
+    }
 }

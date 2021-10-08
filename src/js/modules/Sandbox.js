@@ -13,6 +13,7 @@ import Program from './Program.js'
 import { ImageTexture, DataTexture } from './Texture.js'
 import Light from './Light.js'
 import FrameBuffer from './FrameBuffer.js'
+import ColorPicker from './ColorPicker.js'
 
 export default class Sandbox {
 	static createColor(r, g, b) {
@@ -40,3 +41,4 @@ Sandbox.ImageTexture = ImageTexture
 Sandbox.DataTexture = DataTexture
 Sandbox.Light = Light
 Sandbox.FrameBuffer = FrameBuffer
+Sandbox.ColorPicker = ColorPicker

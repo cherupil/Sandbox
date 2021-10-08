@@ -4,6 +4,7 @@ attribute vec2 aUV;
 
 uniform mat4 uViewProjectionMatrix;
 uniform mat4 uNormalMatrix;
+uniform mat4 uLocalMatrix;
 uniform float uTime;
 
 varying vec3 vNormal;
@@ -12,6 +13,6 @@ varying vec2 vUV;
 void main() {
 	vec4 position = uViewProjectionMatrix * aPosition;
 	gl_Position = position;
-	vNormal = mat3(uNormalMatrix) * aNormal;
+	vNormal = aNormal;
 	vUV = aUV;
 }

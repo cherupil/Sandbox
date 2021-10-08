@@ -1,9 +1,15 @@
 (() => {
-  // src/shaders/plane/vertex.glsl
+  // src/shaders/picking/vertex.glsl
   var vertex_default = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
 
+  // src/shaders/picking/fragment.glsl
+  var fragment_default = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\nuniform float uPickingColor;\n\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	gl_FragColor = vec4(1.0, 0.0, 0.0, uPickingColor);\n}";
+
+  // src/shaders/plane/vertex.glsl
+  var vertex_default2 = "attribute vec4 aPosition;\nattribute vec3 aNormal;\nattribute vec2 aUV;\n\nuniform mat4 uViewProjectionMatrix;\nuniform mat4 uNormalMatrix;\nuniform mat4 uLocalMatrix;\nuniform float uTime;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 position = uViewProjectionMatrix * aPosition;\n	gl_Position = position;\n	vNormal = aNormal;\n	vUV = aUV;\n}";
+
   // src/shaders/plane/fragment.glsl
-  var fragment_default = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\n\nvarying vec2 vUV;\n\nvoid main() {\n	vec4 uvs = vec4(vUV, 0.0, 1.0);\n	gl_FragColor = vec4(uPlaneColor, 1.0);\n}";
+  var fragment_default2 = "precision mediump float;\n\nuniform sampler2D uTexture;\nuniform vec3 uPlaneColor;\nuniform float uPickingColor;\n\nvarying vec3 vNormal;\nvarying vec2 vUV;\n\nvoid main() {\n	gl_FragColor = vec4(uPlaneColor, 1.0);\n}";
 
   // src/js/modules/Renderer.js
   var Renderer = class {
@@ -86,6 +92,9 @@
                 break;
               case "3f":
                 this.gl.uniform3f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1], object.uniforms[uniform].value[2]);
+                break;
+              case "4f":
+                this.gl.uniform4f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1], object.uniforms[uniform].value[2], object.uniforms[uniform].value[3]);
                 break;
               case "mat3":
                 this.gl.uniformMatrix3fv(object.uniforms[uniform].location, false, object.uniforms[uniform].value);
@@ -797,6 +806,11 @@
       };
       this._setUniformData();
     }
+    setShader(shader) {
+      this.shader = shader;
+      this._setAttributeData();
+      this._setUniformData();
+    }
   };
 
   // src/js/modules/Geometry.js
@@ -1197,10 +1211,49 @@
       this.target = target;
       this.buffer = this.gl.createFramebuffer();
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.buffer);
-      this.attach(this.target);
+      this.depthBuffer = this.gl.createRenderbuffer();
+      this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, this.depthBuffer);
+      this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT16, this.target.width, this.target.height);
+      this.attachTexture(this.target);
+      this.attachRenderBuffer();
     }
-    attach(target) {
-      this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, target.texture, 0);
+    resize(width, height) {
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.target.texture);
+      this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.target.format, width, height, 0, this.target.format, this.gl.UNSIGNED_BYTE, null);
+      this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, this.depthBuffer);
+      this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT16, width, height);
+    }
+    attachTexture(target) {
+      this.target = target;
+      this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, this.target.texture, 0);
+    }
+    attachRenderBuffer() {
+      this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, this.depthBuffer);
+    }
+  };
+
+  // src/js/modules/ColorPicker.js
+  var ColorPicker = class {
+    constructor(gl, mouse2) {
+      this.gl = gl;
+      this.mouse = mouse2;
+      this.color = new Uint8Array(4);
+      this.selectedIndex = -1;
+    }
+    _getPixel() {
+      this.pixel = {
+        x: this.mouse.x * this.gl.canvas.width / this.gl.canvas.clientWidth,
+        y: this.gl.canvas.height - this.mouse.y * this.gl.canvas.height / this.gl.canvas.clientHeight - 1
+      };
+    }
+    _getColor() {
+      this.gl.readPixels(this.pixel.x, this.pixel.y, 1, 1, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.color);
+    }
+    getObjectIndex() {
+      this._getPixel();
+      this._getColor();
+      this.selectedIndex = this.color[3] / 255 * 3 - 1;
+      return this.selectedIndex;
     }
   };
 
@@ -1230,6 +1283,7 @@
   Sandbox.DataTexture = DataTexture;
   Sandbox.Light = Light;
   Sandbox.FrameBuffer = FrameBuffer;
+  Sandbox.ColorPicker = ColorPicker;
 
   // src/js/main.js
   var canvas = document.getElementById("webgl");
@@ -1239,19 +1293,53 @@
   var camera = new Sandbox.Perspective(70, aspectRatio, 0.1, 100);
   camera.position.z = 5;
   renderer.resize();
-  var plane = new Sandbox.Plane(2, 2, 1, 1);
-  var planeShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
-  for (let i = -1; i < 2; i++) {
-    const greyValue = (i + 2) * 0.2;
-    const planeMesh = new Sandbox.Mesh(plane, planeShader);
-    planeMesh.setUniform("uPlaneColor", [greyValue, greyValue, greyValue], "3f");
-    planeMesh.setPosition(i * 3, 0, 0);
+  var pickingShader = new Sandbox.Program(renderer.gl, vertex_default, fragment_default);
+  var cube = new Sandbox.Cube(2, 2, 2, 1, 1, 1);
+  var planeShader = new Sandbox.Program(renderer.gl, vertex_default2, fragment_default2);
+  for (let i = 0; i < 3; i++) {
+    const planeMesh = new Sandbox.Mesh(cube, planeShader);
+    planeMesh.setUniform("uPlaneColor", [0, 0, 1], "3f");
+    planeMesh.setUniform("uPickingColor", (i + 1) / 3, "1f");
+    planeMesh.setPosition((i - 1) * 3, 0, 0);
     volume.add(planeMesh);
   }
+  var pickingTexture = new Sandbox.DataTexture(renderer.gl, "rgba", renderer.gl.canvas.width, renderer.gl.canvas.height, null, "linear");
+  var pickingBuffer = new Sandbox.FrameBuffer(renderer.gl, pickingTexture);
+  var mouse = {
+    x: -1,
+    y: -1
+  };
+  var colorPicker = new Sandbox.ColorPicker(renderer.gl, mouse);
+  canvas.addEventListener("mousemove", (event) => {
+    const bounds = canvas.getBoundingClientRect();
+    mouse.x = event.clientX - bounds.left;
+    mouse.y = event.clientY - bounds.top;
+  });
+  var previousObjectIndex = -1;
   var time = 0;
   var then = 0;
   var draw = (now) => {
-    renderer.gl.clearColor(0, 0, 0, 1);
+    for (let i = 0; i < volume.objects.length; i++) {
+      volume.objects[i].setRotationX(time * 10);
+      volume.objects[i].setRotationY(time * 10);
+      volume.objects[i].setShader(pickingShader);
+    }
+    renderer.setFrameBuffer(pickingBuffer);
+    renderer.gl.clearColor(0, 0, 0, 0);
+    renderer.render(volume, camera);
+    const objectIndex = colorPicker.getObjectIndex();
+    if (previousObjectIndex > -1) {
+      volume.objects[previousObjectIndex].uniforms.uPlaneColor.value = [0, 0, 1];
+    }
+    if (objectIndex > -1) {
+      volume.objects[objectIndex].uniforms.uPlaneColor.value = [1, 0, 0];
+      previousObjectIndex = objectIndex;
+    }
+    for (let i = 0; i < volume.objects.length; i++) {
+      volume.objects[i].setShader(planeShader);
+    }
+    renderer.setFrameBuffer(null);
+    renderer.gl.clearColor(1, 1, 1, 1);
     renderer.render(volume, camera);
     now *= 1e-3;
     time += now - then;
@@ -1262,6 +1350,7 @@
     if (renderer.resize()) {
       aspectRatio = renderer.gl.canvas.width / renderer.gl.canvas.height;
       camera.setAspectRatio(aspectRatio);
+      pickingBuffer.resize(renderer.gl.canvas.width, renderer.gl.canvas.height);
     }
   });
   window.requestAnimationFrame(draw);

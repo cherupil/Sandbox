@@ -96,6 +96,9 @@ export default class Renderer {
 						case '3f':
 							this.gl.uniform3f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1], object.uniforms[uniform].value[2])
 							break
+						case '4f':
+							this.gl.uniform4f(object.uniforms[uniform].location, object.uniforms[uniform].value[0], object.uniforms[uniform].value[1], object.uniforms[uniform].value[2], object.uniforms[uniform].value[3])
+							break
 						case 'mat3':
 							this.gl.uniformMatrix3fv(object.uniforms[uniform].location, false, object.uniforms[uniform].value)
 							break
