@@ -39,18 +39,17 @@ export default class Plane extends Geometry {
             const y = positions[i + 1]
             const z = 1
             const magnitude = Math.sqrt((x**2) + (y**2) + (z**2))
-            normals.push((x/magnitude), (y/magnitude), (z/magnitude))
+            normals.push((x/magnitude), (y/magnitude), 1)
         }
-        this.setAttribute('aNormal', new Float32Array(normals), 3)
+        this.attributes.aNormal.data = new Float32Array(normals)
+        this.attributes.aNormal.count = normals.length / 3
 
 		const uvs = []
-
 		for (let i = 0; i < positions.length; i+=3) {
 			const x = (positions[i] + width/2) / width
 			const y = (positions[i+1] + height/2) / height
 			uvs.push(x, y)
 		}
-
 		this.setAttribute('aUV', new Float32Array(uvs), 2)
 	}
 }

@@ -28,7 +28,7 @@ export default class Renderer {
         const displayWidth = this.gl.canvas.clientWidth * this.pixelRatio
         const displayHeight = this.gl.canvas.clientHeight * this.pixelRatio
 
-        const needsResize = this.gl.canvas.width * this.pixel !== displayWidth || this.gl.canvas.height * this.pixelRatio !== displayHeight
+        const needsResize = this.gl.canvas.width * this.pixelRatio !== displayWidth || this.gl.canvas.height * this.pixelRatio !== displayHeight
 
         if (needsResize) {
             this.gl.canvas.width = displayWidth
@@ -48,6 +48,9 @@ export default class Renderer {
 
     	this.gl.enable(this.gl.CULL_FACE)
     	this.gl.enable(this.gl.DEPTH_TEST)
+    	this.gl.enable(this.gl.BLEND)
+    	this.gl.blendEquation( this.gl.FUNC_ADD )
+		this.gl.blendFunc( this.gl.ONE_MINUS_CONSTANT_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA )
 
     	let lastShader = null
     	let lastBuffer = null
