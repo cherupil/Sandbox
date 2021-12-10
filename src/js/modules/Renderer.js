@@ -6,6 +6,8 @@ export default class Renderer {
 
 		this.resize = this.resize.bind(this)
 		this.render = this.render.bind(this)
+		this.depthTest = true
+		this.faceCulling = true
 		this.pixelRatio = 2.0
 		this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true)
 		this.gl.pixelStorei(this.gl.UNPACK_ALIGNMENT, 1)
@@ -46,8 +48,12 @@ export default class Renderer {
     	this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer)
     	this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
 
-    	this.gl.enable(this.gl.CULL_FACE)
-    	this.gl.enable(this.gl.DEPTH_TEST)
+    	if (this.faceCulling) {
+    		this.gl.enable(this.gl.CULL_FACE)
+    	}
+    	if (this.depthTest) {
+    		this.gl.enable(this.gl.DEPTH_TEST)
+    	}
     	this.gl.enable(this.gl.BLEND)
     	this.gl.blendEquation( this.gl.FUNC_ADD )
 		this.gl.blendFunc( this.gl.ONE_MINUS_CONSTANT_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA )

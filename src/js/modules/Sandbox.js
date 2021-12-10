@@ -2,6 +2,7 @@ import Renderer from './Renderer.js'
 import Orthographic from './Orthographic.js'
 import Perspective from './Perspective.js'
 import Volume from './Volume.js'
+import Collection from './Collection.js'
 import Mesh from './Mesh.js'
 import Geometry from './Geometry.js'
 import Plane from './Plane.js'
@@ -29,6 +30,7 @@ Sandbox.Renderer = Renderer
 Sandbox.Orthographic = Orthographic
 Sandbox.Perspective = Perspective
 Sandbox.Volume = Volume
+Sandbox.Collection = Collection
 Sandbox.Mesh = Mesh
 Sandbox.Geometry = Geometry
 Sandbox.Plane = Plane

@@ -104,7 +104,11 @@ export default class Mesh {
 		matrix = Matrix.multiply(matrix, rotationY)
 		matrix = Matrix.multiply(matrix, rotationZ)
 		matrix = Matrix.multiply(matrix, scale)
-		this.localMatrix = matrix
+		if (this.parentCollection) {
+			this.localMatrix = Matrix.multiply(this.parentCollection.localMatrix, matrix)
+		} else {
+			this.localMatrix = matrix
+		}
 	}
 
 	_recalculateNormalMatrix() {
@@ -165,5 +169,19 @@ export default class Mesh {
     	this.shader = shader
     	this._setAttributeData()
 		this._setUniformData()
+    }
+
+    setParent(collection) {
+    	if (this.parentCollection) {
+    		let index = this.parentCollection.items.indexOf(this)
+    		if (index >= 0) {
+    			this.parentCollection.items.splice(index, 1)
+    		}
+    	}
+
+    	if (collection) {
+    		collection.items.push(this)
+    	}
+    	this.parentCollection = collection
     }
 }
