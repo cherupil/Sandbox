@@ -10,6 +10,7 @@ import Circle from './Circle.js'
 import Tetrahedron from './Tetrahedron.js'
 import Cube from './Cube.js'
 import Sphere from './Sphere.js'
+import Cylinder from './Cylinder.js'
 import Program from './Program.js'
 import { ImageTexture, DataTexture } from './Texture.js'
 import Light from './Light.js'
@@ -38,6 +39,7 @@ Sandbox.Circle = Circle
 Sandbox.Tetrahedron = Tetrahedron
 Sandbox.Cube = Cube
 Sandbox.Sphere = Sphere
+Sandbox.Cylinder = Cylinder
 Sandbox.Program = Program
 Sandbox.ImageTexture = ImageTexture
 Sandbox.DataTexture = DataTexture
