@@ -2,50 +2,72 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>WebGL</title>
+        <title>Sandbox</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="stylesheet" href="src/css/main.css">
     </head>
     <body>
-    	<main>
-    		<canvas id="webgl"></canvas>
-            <div class="controls">
-                <div class="sliders">
-                    <h3>Position</h3>
-                    <div class="input">
-                        <label for="translateX">X</label>
-                        <input type="range" min="-5" max="5" value="0" step="0.01" id="translateX">
+        <main>
+            <section class="hero">
+                <h1><figure></figure>Sandbox</h1>
+                <p>A simple WebGL library for creating 3D scenes.</p>
+            </section>
+            <section class="primitives">
+                <h2>Primitives</h2>
+                <div class="primitive-cards">
+                    <div class="card-wrap">
+                        <article class="primitive--card">
+                            <canvas id="primitive--plane"></canvas>
+                            <h4>Plane</h4>
+                            <hr>
+                            <p>Sandbox.Plane(width, height, widthSegments, heightSegments)</p>
+                        </article>
                     </div>
-                    <div class="input">
-                        <label for="translateY">Y</label>
-                        <input type="range" min="-5" max="5" value="0" step="0.01" id="translateY">
+                    <div class="card-wrap">
+                        <article class="primitive--card">
+                            <canvas id="primitive--circle"></canvas>
+                            <h4>Circle</h4>
+                            <hr>
+                            <p>Sandbox.Circle(radius, segments)</p>
+                        </article>
+                    </div>
+                    <div class="card-wrap">
+                        <article class="primitive--card">
+                            <canvas id="primitive--tetrahedron"></canvas>
+                            <h4>Tetrahedron</h4>
+                            <hr>
+                            <p>Sandbox.Tetrahedron(size)</p>
+                        </article>
+                    </div>
+                    <div class="card-wrap">
+                        <article class="primitive--card">
+                            <canvas id="primitive--cube"></canvas>
+                            <h4>Cube</h4>
+                            <hr>
+                            <p>Sandbox.Cube(width, height, depth, widthSegments, heightSegments, depthSegments)</p>
+                        </article>
+                    </div>
+                    <div class="card-wrap">
+                        <article class="primitive--card">
+                            <canvas id="primitive--sphere"></canvas>
+                            <h4>Sphere</h4>
+                            <hr>
+                            <p>Sandbox.Sphere(radius, segments)</p>
+                        </article>
+                    </div>
+                    <div class="card-wrap">
+                        <article class="primitive--card">
+                            <canvas id="primitive--cylinder"></canvas>
+                            <h4>Cylinder</h4>
+                            <hr>
+                            <p>Sandbox.Cylinder(radius, height, segments)</p>
+                        </article>
                     </div>
                 </div>
-                <div class="buttons">
-                    <h3>Focus</h3>
-                    <button id="none">None</button>
-                    <button id="sphere">Sphere</button>
-                    <button id="light">Light</button>
-                </div>
-                <div class="sliders">
-                    <h3>Light</h3>
-                    <div class="input">
-                        <label for="lightX">X</label>
-                        <input type="range" min="-5" max="5" value="0" step="0.01" id="lightX">
-                    </div>
-                    <div class="input">
-                        <label for="lightY">Y</label>
-                        <input type="range" min="-5" max="5" value="0" step="0.01" id="lightY">
-                    </div>
-                    <div class="input">
-                        <label for="lightz">Z</label>
-                        <input type="range" min="-5" max="5" value="0" step="0.01" id="lightZ">
-                    </div>
-                </div>
-            </div>
-    	</main>
-        <script type="module" src="dist/js/main.js"></script>
+            </section>
+        </main>
+        <script src="dist/js/demo.js"></script>
     </body>
 </html>

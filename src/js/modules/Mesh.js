@@ -63,7 +63,11 @@ export default class Mesh {
 	}
 
 	_setDrawMode() {
-		this.drawMode = this.geometryType ?? 'TRIANGLES'
+		if (this.geometryType) {
+			this.drawMode = this.geometryType
+		} else {
+			this.drawMode = 'TRIANGLES'
+		}
     }
 
     _setSurfaceNormals() {

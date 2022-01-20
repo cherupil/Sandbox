@@ -8,7 +8,7 @@ export default class Renderer {
 		this.render = this.render.bind(this)
 		this.depthTest = true
 		this.faceCulling = true
-		this.pixelRatio = 2.0
+		this.pixelRatio = Math.min(window.devicePixelRatio, 2.0)
 		this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true)
 		this.gl.pixelStorei(this.gl.UNPACK_ALIGNMENT, 1)
 		this.framebuffer = null
