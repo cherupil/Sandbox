@@ -168,6 +168,8 @@ renderer.gl.clearColor(0, 0, 0, 0)
 renderer.render(volume, camera)
 ```
 
+## Todos
+Documentation and demos for Color Picking, Lights, Texturing, and Framebuffer Rendering, are still in progress.
 
 ## License
 Licensed under [the MIT license](LICENSE.md).
