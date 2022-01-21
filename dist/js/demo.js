@@ -707,6 +707,65 @@
   var cylinderGeometry = new import_sandbox_min.default.Cylinder(1, 2, 64);
   var cylinderMesh = new import_sandbox_min.default.Mesh(cylinderGeometry, cylinderShader);
   cylinderVolume.add(cylinderMesh);
+  var perspectiveCanvas = document.getElementById("perspective");
+  var perspectiveRenderer = new import_sandbox_min.default.Renderer(perspectiveCanvas);
+  perspectiveRenderer.resize();
+  var perspectiveVolume = new import_sandbox_min.default.Volume();
+  var perspectiveCamera = new import_sandbox_min.default.Perspective(35, 1.85, 0.1, 100);
+  perspectiveCamera.setPosition(0, 0, 6);
+  var perspectiveShader = new import_sandbox_min.default.Program(perspectiveRenderer.gl, vertex_default, fragment_default);
+  var perspectiveGeometry = new import_sandbox_min.default.Cube(2, 2, 2, 1, 1, 1);
+  var perspectiveMesh = new import_sandbox_min.default.Mesh(perspectiveGeometry, perspectiveShader);
+  perspectiveVolume.add(perspectiveMesh);
+  var perspectiveFOV = document.getElementById("perspective-fov");
+  perspectiveFOV.addEventListener("input", (event) => {
+    perspectiveCamera.setFieldOfView(event.target.value);
+  });
+  var perspectiveAspect = document.getElementById("perspective-aspect");
+  perspectiveAspect.addEventListener("input", (event) => {
+    perspectiveCamera.setAspectRatio(event.target.value);
+  });
+  var perspectiveNear = document.getElementById("perspective-near");
+  perspectiveNear.addEventListener("input", (event) => {
+    perspectiveCamera.setNear(parseFloat(event.target.value));
+  });
+  var perspectiveFar = document.getElementById("perspective-far");
+  perspectiveFar.addEventListener("input", (event) => {
+    perspectiveCamera.setFar(parseFloat(event.target.value));
+  });
+  var orthographicCanvas = document.getElementById("orthographic");
+  var orthographicRenderer = new import_sandbox_min.default.Renderer(orthographicCanvas);
+  orthographicRenderer.resize();
+  var orthographicVolume = new import_sandbox_min.default.Volume();
+  var orthographicCamera = new import_sandbox_min.default.Orthographic(-4.43359375, 4.43359375, -2, 2, -2, 2);
+  var orthographicShader = new import_sandbox_min.default.Program(orthographicRenderer.gl, vertex_default, fragment_default);
+  var orthographicGeometry = new import_sandbox_min.default.Cube(2, 2, 2, 1, 1, 1);
+  var orthographicMesh = new import_sandbox_min.default.Mesh(orthographicGeometry, orthographicShader);
+  orthographicVolume.add(orthographicMesh);
+  var orthographicLeft = document.getElementById("orthographic-left");
+  orthographicLeft.addEventListener("input", (event) => {
+    orthographicCamera.setLeft(parseFloat(event.target.value));
+  });
+  var orthographicRight = document.getElementById("orthographic-right");
+  orthographicRight.addEventListener("input", (event) => {
+    orthographicCamera.setRight(parseFloat(event.target.value));
+  });
+  var orthographicBottom = document.getElementById("orthographic-bottom");
+  orthographicBottom.addEventListener("input", (event) => {
+    orthographicCamera.setBottom(parseFloat(event.target.value));
+  });
+  var orthographicTop = document.getElementById("orthographic-top");
+  orthographicTop.addEventListener("input", (event) => {
+    orthographicCamera.setTop(parseFloat(event.target.value));
+  });
+  var orthographicNear = document.getElementById("orthographic-near");
+  orthographicNear.addEventListener("input", (event) => {
+    orthographicCamera.setNear(parseFloat(event.target.value));
+  });
+  var orthographicFar = document.getElementById("orthographic-far");
+  orthographicFar.addEventListener("input", (event) => {
+    orthographicCamera.setFar(parseFloat(event.target.value));
+  });
   var update = (current) => {
     now = current;
     time += now - then;
@@ -735,6 +794,14 @@
     cylinderMesh.setRotationY(Math.cos(time / 1200) * 30);
     cylinderRenderer.gl.clearColor(0, 0, 0, 0);
     cylinderRenderer.render(cylinderVolume, cylinderCamera);
+    perspectiveMesh.setRotationX(Math.sin(time / 1e3) * 30);
+    perspectiveMesh.setRotationY(Math.cos(time / 1200) * 30);
+    perspectiveRenderer.gl.clearColor(1, 1, 1, 1);
+    perspectiveRenderer.render(perspectiveVolume, perspectiveCamera);
+    orthographicMesh.setRotationX(Math.sin(time / 1e3) * 30);
+    orthographicMesh.setRotationY(Math.cos(time / 1200) * 30);
+    orthographicRenderer.gl.clearColor(1, 1, 1, 1);
+    orthographicRenderer.render(orthographicVolume, orthographicCamera);
     window.requestAnimationFrame(update);
   };
   window.requestAnimationFrame(update);

@@ -76,13 +76,17 @@ p {
   width: 100%;
 }
 
-section.primitives {
+section.primitives, section.cameras {
   align-items: center;
   background-color: var(--green-100);
   display: flex;
   flex-direction: column;
   min-height: 900px;
   padding: 120px 20px;
+}
+
+section.cameras {
+  background-color: transparent;
 }
 
 h2 {
@@ -96,7 +100,7 @@ h2 {
   text-align: center;
 }
 
-.primitive-cards {
+.primitive-cards, .cameras-wrap {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -186,7 +190,7 @@ hr {
   width: 100%;
 }
 
-section.primitives .card-wrap p {
+section.primitives .card-wrap p, section.cameras .camera--perspective p, section.cameras .camera--orthographic p {
   color: black;
   font-size: 16px;
   font-weight: 400;
@@ -223,72 +227,58 @@ p {
   width: 100%;
 }
 
-.stagger {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 48px;
-  max-width: 1200px;
-  position: relative;
-  width: 100%;
-}
-
-.stagger-scene, .stagger-camera {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
-  padding: 0 16px;
-  width: 100%;
-}
-
-.stagger-camera-wrap {
-  width: 100%;
-}
-
-.stagger-background, .stagger-background--two {
+.camera--perspective, .camera--orthographic {
   background-color: var(--green-200);
   border-radius: 48px;
-  height: calc(100% + 32px);
-  left: -16px;
-  position: absolute;
-  top: -16px;
-  transform-origin: center;
-  width: calc(100% + 32px);
-  z-index: 0;
+  margin-bottom: 96px;
+  padding: 32px 32px 24px 32px;
+  width: 100%;
 }
 
-.stagger-background--two {
-  align-items: center;
-  background-color: var(--green-300);
-  color: var(--green-500);
-  display: flex;
-  font-size: 48px;
-  font-weight: 600;
-  justify-content: center;
-  will-change: transform;
-  z-index: 1;
+.camera--orthographic {
+  margin-bottom: 0;
 }
 
-.stagger-item {
-  align-items: center;
-  background-color: white;
-  border-radius: 32px;
-  display: flex;
-  font-size: 24px;
-  font-weight: 600;
-  height: 160px;
-  justify-content: center;
-  padding: 16px;
-  pointer-events: none;
-  text-align: center;
-  width: calc(33.33333% - 12px);
-  will-change: transform;
-  z-index: 2;
-}
-
-canvas {
+.camera--perspective canvas, .camera--orthographic canvas {
+  border-radius: 24px;
   height: 512px;
-  width: 512px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.camera--perspective h4, .camera--orthographic h4 {
+  color: var(--green-500);
+}
+
+.camera--perspective hr, .camera--orthographic hr {
+  background-color: var(--green-300);
+}
+
+section.cameras .camera--perspective p, section.cameras .camera--orthographic p {
+  color: var(--green-500);
+  margin-bottom: 16px;
+}
+
+.control-wrap {
+  background-color: var(--green-100);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+  padding: 16px;
+  width: 100%;
+}
+
+.control-item {
+  display: flex;
+  margin: 8px 0px;
+  padding: 0 8px;
+}
+
+.control-item label {
+  margin-right: 32px;
+  text-align: right;
+  width: 100px;
 }
 
 input[type="range"] {
@@ -296,12 +286,11 @@ input[type="range"] {
   left: 32px;
   bottom: 48px;
   display: block;
-  margin-bottom: 120px;
   margin-left: auto;
   margin-right: auto;
   max-width: 100%;
   -webkit-appearance: none;
-  width: 512px;
+  width: calc(100% - 132px);
   z-index: 3;
 }
 

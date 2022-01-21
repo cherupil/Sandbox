@@ -67,6 +67,67 @@
                     </div>
                 </div>
             </section>
+            <section class="cameras">
+                <h2>Cameras</h2>
+                <div class="cameras-wrap">
+                    <article class="camera--perspective">
+                        <canvas id="perspective"></canvas>
+                        <h4>Perspective</h4>
+                        <hr>
+                        <p>Sandbox.Perspective(fieldOfView, aspectRatio, near, far)</p>
+                        <div class="control-wrap">
+                            <div class="control-item">
+                                <label for="perspective-fov">fieldOfView</label>
+                                <input id="perspective-fov" type="range" min="1" max="100" step="1" value="35">
+                            </div>
+                            <div class="control-item">
+                                <label for="perspective-aspect">aspectRatio</label>
+                                <input id="perspective-aspect" type="range" min="0.01" max="3" step="0.01" value="1.85">
+                            </div>
+                            <div class="control-item">
+                                <label for="perspective-near">near</label>
+                                <input id="perspective-near" type="range" min="0.1" max="100" step="0.1" value="0.1">
+                            </div>
+                            <div class="control-item">
+                                <label for="perspective-far">far</label>
+                                <input id="perspective-far" type="range" min="0.1" max="100" step="0.1" value="100">
+                            </div>
+                        </div>
+                    </article>
+                    <article class="camera--orthographic">
+                        <canvas id="orthographic"></canvas>
+                        <h4>Orthographic</h4>
+                        <hr>
+                        <p>Sandbox.Orthographic(left, right, bottom, top, near, far)</p>
+                        <div class="control-wrap">
+                            <div class="control-item">
+                                <label for="orthographic-left">left</label>
+                                <input id="orthographic-left" type="range" min="-5" max="-0.1" step="0.1" value="-4.43">
+                            </div>
+                            <div class="control-item">
+                                <label for="orthographic-right">right</label>
+                                <input id="orthographic-right" type="range" min="0.1" max="5" step="0.1" value="4.43">
+                            </div>
+                            <div class="control-item">
+                                <label for="orthographic-bottom">bottom</label>
+                                <input id="orthographic-bottom" type="range" min="-5" max="-0.1" step="0.1" value="-2">
+                            </div>
+                            <div class="control-item">
+                                <label for="orthographic-top">top</label>
+                                <input id="orthographic-top" type="range" min="0.1" max="5" step="0.1" value="2">
+                            </div>
+                            <div class="control-item">
+                                <label for="orthographic-near">near</label>
+                                <input id="orthographic-near" type="range" min="-5" max="-0.1" step="0.1" value="-2">
+                            </div>
+                            <div class="control-item">
+                                <label for="orthographic-far">far</label>
+                                <input id="orthographic-far" type="range" min="0.1" max="5" step="0.1" value="2">
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
         </main>
         <script src="dist/js/demo.js"></script>
     </body>

@@ -94,6 +94,89 @@ const cylinderGeometry = new Sandbox.Cylinder(1, 2, 64)
 const cylinderMesh = new Sandbox.Mesh(cylinderGeometry, cylinderShader)
 cylinderVolume.add(cylinderMesh)
 
+
+/*
+Cameras
+*/
+
+//Perspective
+const perspectiveCanvas = document.getElementById('perspective')
+const perspectiveRenderer = new Sandbox.Renderer(perspectiveCanvas)
+perspectiveRenderer.resize()
+const perspectiveVolume = new Sandbox.Volume()
+
+const perspectiveCamera = new Sandbox.Perspective(35, 1.85, 0.1, 100)
+perspectiveCamera.setPosition(0, 0, 6)
+const perspectiveShader = new Sandbox.Program(perspectiveRenderer.gl, primitiveVertex, primitiveFragment)
+
+const perspectiveGeometry = new Sandbox.Cube(2, 2, 2, 1, 1, 1)
+const perspectiveMesh = new Sandbox.Mesh(perspectiveGeometry, perspectiveShader)
+perspectiveVolume.add(perspectiveMesh)
+
+const perspectiveFOV = document.getElementById('perspective-fov')
+perspectiveFOV.addEventListener('input', (event) => {
+	perspectiveCamera.setFieldOfView(event.target.value)
+})
+
+const perspectiveAspect = document.getElementById('perspective-aspect')
+perspectiveAspect.addEventListener('input', (event) => {
+	perspectiveCamera.setAspectRatio(event.target.value)
+})
+
+const perspectiveNear = document.getElementById('perspective-near')
+perspectiveNear.addEventListener('input', (event) => {
+	perspectiveCamera.setNear(parseFloat(event.target.value))
+})
+
+const perspectiveFar = document.getElementById('perspective-far')
+perspectiveFar.addEventListener('input', (event) => {
+	perspectiveCamera.setFar(parseFloat(event.target.value))
+})
+
+//Orthographic
+const orthographicCanvas = document.getElementById('orthographic')
+const orthographicRenderer = new Sandbox.Renderer(orthographicCanvas)
+orthographicRenderer.resize()
+const orthographicVolume = new Sandbox.Volume()
+
+const orthographicCamera = new Sandbox.Orthographic(-4.43359375, 4.43359375, -2, 2, -2, 2)
+//orthographicCamera.setPosition(0, 0, -6)
+const orthographicShader = new Sandbox.Program(orthographicRenderer.gl, primitiveVertex, primitiveFragment)
+
+const orthographicGeometry = new Sandbox.Cube(2, 2, 2, 1, 1, 1)
+const orthographicMesh = new Sandbox.Mesh(orthographicGeometry, orthographicShader)
+orthographicVolume.add(orthographicMesh)
+
+const orthographicLeft = document.getElementById('orthographic-left')
+orthographicLeft.addEventListener('input', (event) => {
+	orthographicCamera.setLeft(parseFloat(event.target.value))
+})
+
+const orthographicRight = document.getElementById('orthographic-right')
+orthographicRight.addEventListener('input', (event) => {
+	orthographicCamera.setRight(parseFloat(event.target.value))
+})
+
+const orthographicBottom = document.getElementById('orthographic-bottom')
+orthographicBottom.addEventListener('input', (event) => {
+	orthographicCamera.setBottom(parseFloat(event.target.value))
+})
+
+const orthographicTop = document.getElementById('orthographic-top')
+orthographicTop.addEventListener('input', (event) => {
+	orthographicCamera.setTop(parseFloat(event.target.value))
+})
+
+const orthographicNear = document.getElementById('orthographic-near')
+orthographicNear.addEventListener('input', (event) => {
+	orthographicCamera.setNear(parseFloat(event.target.value))
+})
+
+const orthographicFar = document.getElementById('orthographic-far')
+orthographicFar.addEventListener('input', (event) => {
+	orthographicCamera.setFar(parseFloat(event.target.value))
+})
+
 const update = (current) => {
     now = current
     time += (now - then)
@@ -134,6 +217,19 @@ const update = (current) => {
     cylinderMesh.setRotationY(Math.cos(time / 1200) * 30)
     cylinderRenderer.gl.clearColor(0, 0, 0, 0)
     cylinderRenderer.render(cylinderVolume, cylinderCamera)
+
+    //Perspective Camera
+    perspectiveMesh.setRotationX(Math.sin(time / 1000) * 30)
+    perspectiveMesh.setRotationY(Math.cos(time / 1200) * 30)
+    perspectiveRenderer.gl.clearColor(1, 1, 1, 1)
+    perspectiveRenderer.render(perspectiveVolume, perspectiveCamera)
+
+    //Orthographic Camera
+    orthographicMesh.setRotationX(Math.sin(time / 1000) * 30)
+    orthographicMesh.setRotationY(Math.cos(time / 1200) * 30)
+    orthographicRenderer.gl.clearColor(1, 1, 1, 1)
+    orthographicRenderer.render(orthographicVolume, orthographicCamera)
+
     window.requestAnimationFrame(update)
 }
 

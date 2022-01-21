@@ -73,7 +73,7 @@ To create a custom Geometry object, pass in an array of position data as 3D posi
 const positions = [
 	1, 0, 0, //x, y, z
 	0, 1, 0, //x, y, z
-	0, 0, 1 //x, y, z
+	0, 0, 1  //x, y, z
 ]
 const geometry = new Sandbox.Geometry(positions)
 ```
@@ -169,7 +169,7 @@ renderer.render(volume, camera)
 ```
 
 ## Todos
-Documentation and demos for Color Picking, Lights, Texturing, and Framebuffer Rendering, are still in progress.
+Documentation and demos for Collections, Color Picking, Lights, Texturing, and Framebuffer Rendering are still in progress.
 
 ## License
 Licensed under [the MIT license](LICENSE.md).
