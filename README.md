@@ -53,7 +53,7 @@ const camera = new Sandbox.Perspective(35, 1.85, 0.1, 100)
 ```
 
 #### The Orthographic Camera
-A Perspective Camera requires six arguments:
+An Orthographic Camera requires six arguments:
 1. A 'left' plane location
 2. A 'right' plane location
 3. A 'bottom' plane location
